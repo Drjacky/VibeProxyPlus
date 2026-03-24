@@ -225,6 +225,28 @@ struct ConfigComposerSpec {
             expectNil(provider(named: "nvidia", in: runtime), "disabled custom providers should be omitted from runtime config", recorder: recorder)
         }
 
+        run("wildcard oauth exclusions are detectable", recorder: recorder) {
+            let root: [String: Any] = [
+                "oauth-excluded-models": [
+                    "claude": ["*"],
+                    "gemini-cli": ["gemini-2.5-pro"]
+                ]
+            ]
+
+            expectEqual(
+                ConfigComposer.isOAuthProviderWildcardExcluded("claude", in: root),
+                true,
+                "wildcard exclusions should be detected for locked built-in providers",
+                recorder: recorder
+            )
+            expectEqual(
+                ConfigComposer.isOAuthProviderWildcardExcluded("gemini-cli", in: root),
+                false,
+                "specific model exclusions should not be treated as a full provider lock",
+                recorder: recorder
+            )
+        }
+
         if recorder.failures == 0 {
             print("ConfigComposerSpec: all checks passed")
             Foundation.exit(EXIT_SUCCESS)

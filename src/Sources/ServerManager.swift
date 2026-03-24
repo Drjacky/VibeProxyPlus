@@ -51,6 +51,7 @@ class ServerManager: ObservableObject {
     private(set) var port = 8317
     @Published private(set) var customProviders: [CustomProviderDefinition] = []
     @Published private(set) var customProviderCredentials: [String: [CustomProviderCredential]] = [:]
+    @Published private(set) var configErrorMessage: String?
 
     /// Provider enabled states - when disabled, models are excluded via oauth-excluded-models
     @Published var enabledProviders: [String: Bool] = [:] {
@@ -105,6 +106,15 @@ class ServerManager: ObservableObject {
         let filePath: URL
         let isDisabled: Bool
     }
+
+    private struct LoadedBaseConfig {
+        let root: [String: Any]
+        let isUserConfig: Bool
+    }
+
+    private struct ConfigResolutionFailure: Error {
+        let message: String
+    }
     
     var onLogUpdate: (([String]) -> Void)?
 
@@ -131,13 +141,38 @@ class ServerManager: ObservableObject {
 
     /// Check if a provider is enabled (defaults to true if not set)
     func isProviderEnabled(_ providerKey: String) -> Bool {
-        return enabledProviders[providerKey] ?? true
+        let userEnabled = enabledProviders[providerKey] ?? true
+        guard userEnabled else {
+            return false
+        }
+        return providerConfigLockReason(providerKey) == nil
+    }
+
+    func providerConfigLockReason(_ providerKey: String) -> String? {
+        guard let oauthProviderKey = Self.oauthProviderKeys[providerKey] else {
+            return nil
+        }
+        guard case .success(let baseConfig) = loadBaseConfigRoot() else {
+            return nil
+        }
+        guard ConfigComposer.isOAuthProviderWildcardExcluded(oauthProviderKey, in: baseConfig.root) else {
+            return nil
+        }
+        return "Disabled by ~/.cli-proxy-api/config.yaml oauth-excluded-models. Remove the '*' exclusion for \(oauthProviderKey) to enable it here."
+    }
+
+    func isProviderToggleLocked(_ providerKey: String) -> Bool {
+        providerConfigLockReason(providerKey) != nil
     }
 
     /// Set provider enabled state and regenerate config (hot reload - no restart needed)
     func setProviderEnabled(_ providerKey: String, enabled: Bool) {
         enabledProviders[providerKey] = enabled
-        addLog(enabled ? "✓ Enabled provider: \(providerKey)" : "⚠️ Disabled provider: \(providerKey)")
+        if enabled, let lockReason = providerConfigLockReason(providerKey) {
+            addLog("⚠️ \(providerKey) remains disabled: \(lockReason)")
+        } else {
+            addLog(enabled ? "✓ Enabled provider: \(providerKey)" : "⚠️ Disabled provider: \(providerKey)")
+        }
         reloadCustomProviders()
         applyConfigUpdate()
     }
@@ -174,7 +209,7 @@ class ServerManager: ObservableObject {
         // Use config path (merged with Z.AI if keys exist)
         let configPath = getConfigPath()
         guard !configPath.isEmpty && FileManager.default.fileExists(atPath: configPath) else {
-            addLog("❌ Error: config.yaml not found")
+            addLog("❌ Error: \(configErrorMessage ?? "Could not resolve active config path")")
             completion(false)
             return
         }
@@ -304,7 +339,7 @@ class ServerManager: ObservableObject {
         
         let configPath = getConfigPath()
         guard !configPath.isEmpty else {
-            completion(false, "Could not resolve config path")
+            completion(false, configErrorMessage ?? "Could not resolve config path")
             return
         }
         
@@ -456,12 +491,12 @@ class ServerManager: ObservableObject {
                     completion(true, "🌐 Browser opened for authentication.\n\nPlease complete the login in your browser.\n\nThe app will automatically detect when you're authenticated.")
                 } else {
                     // Process died quickly - check for error
-                    let outputData = try? outputPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorData = try? errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                     
-                    var output = String(data: outputData ?? Data(), encoding: .utf8) ?? ""
+                    var output = String(data: outputData, encoding: .utf8) ?? ""
                     if output.isEmpty { output = capture.text }
-                    let error = String(data: errorData ?? Data(), encoding: .utf8) ?? ""
+                    let error = String(data: errorData, encoding: .utf8) ?? ""
                     
                     NSLog("[Auth] Process died quickly - output: %@", output.isEmpty ? "(empty)" : String(output.prefix(200)))
                     
@@ -601,47 +636,66 @@ class ServerManager: ObservableObject {
     }
     
     func reloadCustomProviders() {
-        guard let config = loadBaseConfigRoot() else {
+        switch loadBaseConfigRoot() {
+        case .success(let config):
+            clearConfigError()
+            let providers = ConfigComposer.parseCustomProviders(
+                from: config.root,
+                reservedProviderIDs: Self.reservedCustomProviderKeys
+            )
+            let managedProviderIDs = Set(providers.map { $0.id })
+            let credentials = Dictionary(
+                grouping: loadCustomProviderAuthRecords().filter { managedProviderIDs.contains($0.providerID) },
+                by: \.providerID
+            ).mapValues { records in
+                records
+                    .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+                    .map {
+                        CustomProviderCredential(
+                            id: $0.filePath.lastPathComponent,
+                            providerID: $0.providerID,
+                            label: $0.label,
+                            filePath: $0.filePath,
+                            isDisabled: $0.isDisabled
+                        )
+                    }
+            }
+
+            DispatchQueue.main.async {
+                self.customProviders = providers
+                self.customProviderCredentials = credentials
+            }
+        case .failure(let error):
+            publishConfigError(error.message)
             DispatchQueue.main.async {
                 self.customProviders = []
                 self.customProviderCredentials = [:]
             }
-            return
-        }
-        
-        let providers = ConfigComposer.parseCustomProviders(
-            from: config.root,
-            reservedProviderIDs: Self.reservedCustomProviderKeys
-        )
-        let managedProviderIDs = Set(providers.map(\.id))
-        let credentials = Dictionary(
-            grouping: loadCustomProviderAuthRecords().filter { managedProviderIDs.contains($0.providerID) },
-            by: \.providerID
-        ).mapValues { records in
-            records
-                .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
-                .map {
-                    CustomProviderCredential(
-                        id: $0.filePath.lastPathComponent,
-                        providerID: $0.providerID,
-                        label: $0.label,
-                        filePath: $0.filePath,
-                        isDisabled: $0.isDisabled
-                    )
-                }
-        }
-        
-        DispatchQueue.main.async {
-            self.customProviders = providers
-            self.customProviderCredentials = credentials
         }
     }
     
     /// Returns the config path to use, merging the base config with provider state and API-key auth files.
     func getConfigPath() -> String {
-        guard let bundledConfigPath = bundledConfigPath(),
-              let baseConfig = loadBaseConfigRoot() else {
+        switch resolveConfigPath() {
+        case .success(let path):
+            clearConfigError()
+            return path
+        case .failure(let error):
+            publishConfigError(error.message)
             return ""
+        }
+    }
+
+    private func resolveConfigPath() -> Result<String, ConfigResolutionFailure> {
+        guard let bundledConfigPath = bundledConfigPath() else {
+            return .failure(ConfigResolutionFailure(message: "Could not locate the bundled config.yaml in the app bundle."))
+        }
+        let baseConfigResult = loadBaseConfigRoot()
+        guard case .success(let baseConfig) = baseConfigResult else {
+            if case .failure(let error) = baseConfigResult {
+                return .failure(error)
+            }
+            return .failure(ConfigResolutionFailure(message: "Could not load the base configuration."))
         }
         
         let authDir = authDirectoryURL()
@@ -654,7 +708,7 @@ class ServerManager: ObservableObject {
         let disabledProviders = Self.oauthProviderKeys.compactMap { serviceKey, oauthKey in
             isProviderEnabled(serviceKey) ? nil : oauthKey
         }
-        let disabledCustomProviderIDs = Set(managedCustomProviders.map(\.id)).filter { !isProviderEnabled($0) }
+        let disabledCustomProviderIDs = Set(managedCustomProviders.map { $0.id }).filter { !isProviderEnabled($0) }
         let needsMergedConfig =
             baseConfig.isUserConfig ||
             !zaiApiKeys.isEmpty ||
@@ -663,7 +717,7 @@ class ServerManager: ObservableObject {
             !customAuthRecords.isEmpty
         
         guard needsMergedConfig else {
-            return bundledConfigPath
+            return .success(bundledConfigPath)
         }
         
         let mergedRoot = ConfigComposer.composeRuntimeConfig(
@@ -687,12 +741,15 @@ class ServerManager: ObservableObject {
         do {
             try FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
             let mergedContent = try Yams.dump(object: mergedRoot)
-            try mergedContent.write(to: mergedConfigPath, atomically: true, encoding: .utf8)
+            try mergedContent.write(to: mergedConfigPath, atomically: true, encoding: String.Encoding.utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: mergedConfigPath.path)
-            return mergedConfigPath.path
+            return .success(mergedConfigPath.path)
         } catch {
-            NSLog("[ServerManager] Failed to write merged config at %@: %@", mergedConfigPath.path, error.localizedDescription)
-            return bundledConfigPath
+            return .failure(
+                ConfigResolutionFailure(
+                    message: "Failed to write merged config to \(mergedConfigPath.path): \(error.localizedDescription)"
+                )
+            )
         }
     }
     
@@ -754,43 +811,56 @@ class ServerManager: ObservableObject {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
     }
     
-    private func loadBaseConfigRoot() -> (root: [String: Any], isUserConfig: Bool)? {
-        guard let bundledConfigPath = bundledConfigPath(),
-              let bundledRoot = loadYAMLDictionary(atPath: bundledConfigPath) else {
-            return nil
+    private func loadBaseConfigRoot() -> Result<LoadedBaseConfig, ConfigResolutionFailure> {
+        guard let bundledConfigPath = bundledConfigPath() else {
+            return .failure(ConfigResolutionFailure(message: "Could not locate the bundled config.yaml in the app bundle."))
+        }
+        let bundledRootResult = loadYAMLDictionary(atPath: bundledConfigPath)
+        guard case .success(let bundledRoot) = bundledRootResult else {
+            if case .failure(let error) = bundledRootResult {
+                return .failure(error)
+            }
+            return .failure(ConfigResolutionFailure(message: "Could not load the bundled config at \(bundledConfigPath)."))
         }
         
         let userConfigPath = authDirectoryURL()
             .appendingPathComponent(CustomProviderConstants.userConfigFilename)
             .path
         guard FileManager.default.fileExists(atPath: userConfigPath) else {
-            return (root: bundledRoot, isUserConfig: false)
+            return .success(LoadedBaseConfig(root: bundledRoot, isUserConfig: false))
         }
         
-        guard let userRoot = loadYAMLDictionary(atPath: userConfigPath) else {
-            NSLog("[ServerManager] Falling back to bundled config because user config at %@ could not be parsed", userConfigPath)
-            return (root: bundledRoot, isUserConfig: false)
+        let userRootResult = loadYAMLDictionary(atPath: userConfigPath)
+        guard case .success(let userRoot) = userRootResult else {
+            if case .failure(let error) = userRootResult {
+                return .failure(error)
+            }
+            return .failure(ConfigResolutionFailure(message: "Could not load the user config at \(userConfigPath)."))
         }
         
-        return (
-            root: ConfigComposer.composeAdditiveBaseConfig(
+        return .success(
+            LoadedBaseConfig(
+                root: ConfigComposer.composeAdditiveBaseConfig(
                 bundledRoot: bundledRoot,
                 userRoot: userRoot
             ),
-            isUserConfig: true
+                isUserConfig: true
+            )
         )
     }
     
-    private func loadYAMLDictionary(atPath path: String) -> [String: Any]? {
+    private func loadYAMLDictionary(atPath path: String) -> Result<[String: Any], ConfigResolutionFailure> {
         do {
             let content = try String(contentsOfFile: path, encoding: .utf8)
             guard let loaded = try Yams.load(yaml: content) else {
-                return [:]
+                return .success([:])
             }
-            return ConfigComposer.stringKeyedDictionary(loaded)
+            guard let dictionary = ConfigComposer.stringKeyedDictionary(loaded) else {
+                return .failure(ConfigResolutionFailure(message: "Config at \(path) must be a YAML mapping at the root."))
+            }
+            return .success(dictionary)
         } catch {
-            NSLog("[ServerManager] Failed to parse YAML at %@: %@", path, error.localizedDescription)
-            return nil
+            return .failure(ConfigResolutionFailure(message: "Failed to parse YAML at \(path): \(error.localizedDescription)"))
         }
     }
     
@@ -856,6 +926,32 @@ class ServerManager: ObservableObject {
             options: .regularExpression
         )
         return sanitized.isEmpty ? "provider" : sanitized
+    }
+
+    private func publishConfigError(_ message: String) {
+        let update = {
+            let shouldLog = self.configErrorMessage != message
+            self.configErrorMessage = message
+            if shouldLog {
+                self.addLog("❌ \(message)")
+            }
+        }
+        if Thread.isMainThread {
+            update()
+        } else {
+            DispatchQueue.main.async(execute: update)
+        }
+    }
+
+    private func clearConfigError() {
+        let update = {
+            self.configErrorMessage = nil
+        }
+        if Thread.isMainThread {
+            update()
+        } else {
+            DispatchQueue.main.async(execute: update)
+        }
     }
     
     private func applyConfigUpdate() {

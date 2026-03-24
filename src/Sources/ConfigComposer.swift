@@ -140,6 +140,21 @@ enum ConfigComposer {
         }
         return array.compactMap { stringKeyedDictionary($0) }
     }
+
+    static func stringArray(_ value: Any?) -> [String] {
+        if let array = value as? [String] {
+            return array
+        }
+        if let array = value as? [Any] {
+            return array.compactMap { $0 as? String }
+        }
+        return []
+    }
+
+    static func isOAuthProviderWildcardExcluded(_ oauthProviderKey: String, in root: [String: Any]) -> Bool {
+        let exclusions = stringKeyedDictionary(root["oauth-excluded-models"] ?? [:]) ?? [:]
+        return stringArray(exclusions[oauthProviderKey]).contains("*")
+    }
     
     private static func mergeDictionary(_ base: [String: Any], overlaidWith overlay: [String: Any]) -> [String: Any] {
         var merged = base

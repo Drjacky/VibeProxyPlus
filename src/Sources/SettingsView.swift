@@ -117,6 +117,9 @@ struct ServiceRow<ExtraContent: View>: View {
     let isAuthenticating: Bool
     let helpText: String?
     let isEnabled: Bool
+    let isToggleLocked: Bool
+    let toggleHelpText: String?
+    let disabledReasonText: String?
     let customTitle: String?
     let onConnect: () -> Void
     let onDisconnect: (AuthAccount) -> Void
@@ -149,7 +152,8 @@ struct ServiceRow<ExtraContent: View>: View {
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .labelsHidden()
-                .help(isEnabled ? "Disable this provider" : "Enable this provider")
+                .disabled(isToggleLocked)
+                .help(toggleHelpText ?? (isEnabled ? "Disable this provider" : "Enable this provider"))
 
                 if let nsImage = IconCatalog.shared.image(named: iconName, resizedTo: NSSize(width: 20, height: 20), template: true) {
                     Image(nsImage: nsImage)
@@ -222,6 +226,11 @@ struct ServiceRow<ExtraContent: View>: View {
                         .foregroundColor(.secondary)
                         .padding(.leading, 28)
                 }
+            } else if let disabledReasonText, !disabledReasonText.isEmpty {
+                Text(disabledReasonText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 28)
             }
         }
         .padding(.vertical, 4)
@@ -507,6 +516,14 @@ struct SettingsView: View {
                     }
                 }
 
+                if let configErrorMessage = serverManager.configErrorMessage {
+                    Section("Configuration Error") {
+                        Text(configErrorMessage)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                }
+
                 Section {
                     Toggle("Launch at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { newValue in
@@ -530,6 +547,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .antigravity,
                         helpText: "Antigravity provides OAuth-based access to various AI models including Gemini and Claude. One login gives you access to multiple AI services.",
                         isEnabled: serverManager.isProviderEnabled("antigravity"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("antigravity"),
+                        toggleHelpText: serverManager.providerConfigLockReason("antigravity"),
+                        disabledReasonText: serverManager.providerConfigLockReason("antigravity"),
                         customTitle: nil,
                         onConnect: { connectService(.antigravity) },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -545,6 +565,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .claude,
                         helpText: nil,
                         isEnabled: serverManager.isProviderEnabled("claude"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("claude"),
+                        toggleHelpText: serverManager.providerConfigLockReason("claude"),
+                        disabledReasonText: serverManager.providerConfigLockReason("claude"),
                         customTitle: serverManager.vercelGatewayEnabled && !serverManager.vercelApiKey.isEmpty ? "Claude Code (via Vercel)" : nil,
                         onConnect: { connectService(.claude) },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -562,6 +585,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .codex,
                         helpText: nil,
                         isEnabled: serverManager.isProviderEnabled("codex"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("codex"),
+                        toggleHelpText: serverManager.providerConfigLockReason("codex"),
+                        disabledReasonText: serverManager.providerConfigLockReason("codex"),
                         customTitle: nil,
                         onConnect: { connectService(.codex) },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -577,6 +603,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .gemini,
                         helpText: "⚠️ Note: If you're an existing Gemini user with multiple projects, authentication will use your default project. Set your desired project as default in Google AI Studio before connecting.",
                         isEnabled: serverManager.isProviderEnabled("gemini"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("gemini"),
+                        toggleHelpText: serverManager.providerConfigLockReason("gemini"),
+                        disabledReasonText: serverManager.providerConfigLockReason("gemini"),
                         customTitle: nil,
                         onConnect: { connectService(.gemini) },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -592,6 +621,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .copilot,
                         helpText: "GitHub Copilot provides access to Claude, GPT, Gemini and other models via your Copilot subscription.",
                         isEnabled: serverManager.isProviderEnabled("github-copilot"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("github-copilot"),
+                        toggleHelpText: serverManager.providerConfigLockReason("github-copilot"),
+                        disabledReasonText: serverManager.providerConfigLockReason("github-copilot"),
                         customTitle: nil,
                         onConnect: { connectService(.copilot) },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -607,6 +639,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .qwen,
                         helpText: nil,
                         isEnabled: serverManager.isProviderEnabled("qwen"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("qwen"),
+                        toggleHelpText: serverManager.providerConfigLockReason("qwen"),
+                        disabledReasonText: serverManager.providerConfigLockReason("qwen"),
                         customTitle: nil,
                         onConnect: { showingQwenEmailPrompt = true },
                         onDisconnect: { account in disconnectAccount(account) },
@@ -622,6 +657,9 @@ struct SettingsView: View {
                         isAuthenticating: authenticatingService == .zai,
                         helpText: "Z.AI GLM provides access to GLM-4.7 and other models via API key. Get your key at https://z.ai/manage-apikey/apikey-list",
                         isEnabled: serverManager.isProviderEnabled("zai"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("zai"),
+                        toggleHelpText: serverManager.providerConfigLockReason("zai"),
+                        disabledReasonText: serverManager.providerConfigLockReason("zai"),
                         customTitle: nil,
                         onConnect: { showingZaiApiKeyPrompt = true },
                         onDisconnect: { account in disconnectAccount(account) },
