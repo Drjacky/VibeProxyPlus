@@ -784,7 +784,7 @@ struct SettingsView: View {
                 Text("Enter your Z.AI API key from https://z.ai/manage-apikey/apikey-list")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                TextField("", text: $zaiApiKey)
+                SecureField("", text: $zaiApiKey)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 300)
                 HStack(spacing: 12) {
@@ -852,6 +852,7 @@ struct SettingsView: View {
     
     private func toggleAccountDisabled(_ account: AuthAccount) {
         if authManager.toggleAccountDisabled(account) {
+            serverManager.refreshAuthBackedConfiguration()
             authResultSuccess = true
             authResultMessage = account.isDisabled
                 ? "✓ Enabled \(account.displayName)"
@@ -1011,7 +1012,6 @@ struct SettingsView: View {
                     self.authResultSuccess = true
                     self.authResultMessage = "✓ \(provider.title) API key added successfully.\n\nYou can now use this provider through the proxy."
                     self.showingAuthResult = true
-                    self.serverManager.reloadCustomProviders()
                 } else {
                     self.authResultSuccess = false
                     self.authResultMessage = "Failed to save API key for \(provider.title).\n\nDetails: \(output.isEmpty ? "Unknown error" : output)"

@@ -82,6 +82,8 @@ class ServerManager: ObservableObject {
     private var logBuffer: RingBuffer<String>
     private let maxLogLines = 1000
     private let processQueue = DispatchQueue(label: "io.automaze.vibeproxy.server-process", qos: .userInitiated)
+    private let credentialMutationQueue = DispatchQueue(label: "io.automaze.vibeproxy.credential-mutations", qos: .userInitiated)
+    private lazy var zaiAPIKeyStore = ZAIAPIKeyStore(directoryURL: authDirectoryURL())
     private lazy var customProviderCredentialStore = CustomProviderCredentialStore(directoryURL: authDirectoryURL())
     private var activeConfigPath = ""
     private var isRestartingForConfigUpdate = false
@@ -524,49 +526,46 @@ class ServerManager: ObservableObject {
     
     /// Saves a Z.AI API key to the auth directory
     func saveZaiApiKey(_ apiKey: String, completion: @escaping (Bool, String) -> Void) {
-        let authDir = authDirectoryURL()
-        
-        do {
-            try FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
-        } catch {
-            completion(false, "Failed to create auth directory: \(error.localizedDescription)")
-            return
-        }
-        
-        let keyPreview = maskAPIKey(apiKey)
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-        let filename = "zai-\(UUID().uuidString.prefix(8)).json"
-        let filePath = authDir.appendingPathComponent(filename)
-        let authData: [String: Any] = [
-            "type": "zai",
-            "email": keyPreview,
-            "api_key": apiKey,
-            "created": timestamp
-        ]
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: authData, options: .prettyPrinted)
-            try jsonData.write(to: filePath)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: filePath.path)
-            addLog("✓ Z.AI API key saved to \(filename)")
-            reloadCustomProviders()
-            requestConfigUpdate()
-            completion(true, "API key saved successfully")
-        } catch {
-            completion(false, "Failed to save API key: \(error.localizedDescription)")
+        credentialMutationQueue.async { [weak self] in
+            guard let self else { return }
+
+            do {
+                let filePath = try self.zaiAPIKeyStore.save(apiKey: apiKey)
+                self.addLog("✓ Z.AI API key saved to \(filePath.lastPathComponent)")
+                self.refreshAuthBackedConfiguration()
+                DispatchQueue.main.async {
+                    completion(true, "API key saved successfully")
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(false, error.localizedDescription)
+                }
+            }
         }
     }
     
     func saveCustomProviderAPIKey(providerID: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
-        do {
-            _ = try customProviderCredentialStore.save(providerID: providerID, apiKey: apiKey)
-            addLog("✓ Saved API key for custom provider: \(providerID)")
-            reloadCustomProviders()
-            requestConfigUpdate()
-            completion(true, "API key saved successfully")
-        } catch {
-            completion(false, "Failed to save API key: \(error.localizedDescription)")
+        credentialMutationQueue.async { [weak self] in
+            guard let self else { return }
+
+            do {
+                _ = try self.customProviderCredentialStore.save(providerID: providerID, apiKey: apiKey)
+                self.addLog("✓ Saved API key for custom provider: \(providerID)")
+                self.refreshAuthBackedConfiguration()
+                DispatchQueue.main.async {
+                    completion(true, "API key saved successfully")
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(false, error.localizedDescription)
+                }
+            }
         }
+    }
+
+    func refreshAuthBackedConfiguration() {
+        reloadCustomProviders()
+        requestConfigUpdate()
     }
     
     @discardableResult
@@ -842,18 +841,11 @@ class ServerManager: ObservableObject {
     }
     
     private func loadZaiAPIKeys() -> [String] {
-        guard let files = try? FileManager.default.contentsOfDirectory(at: authDirectoryURL(), includingPropertiesForKeys: nil) else {
-            return []
+        let loadResult = zaiAPIKeyStore.loadActiveAPIKeys()
+        for issue in loadResult.issues {
+            NSLog("[ServerManager] Ignoring Z.AI API key file at %@: %@", issue.filePath.path, issue.message)
         }
-        return files.compactMap { file in
-            guard file.lastPathComponent.hasPrefix("zai-"),
-                  file.pathExtension == "json",
-                  let json = readJSONFile(at: file),
-                  let apiKey = json["api_key"] as? String else {
-                return nil
-            }
-            return apiKey
-        }
+        return loadResult.apiKeys
     }
     
     private func loadCustomProviderCredentialRecords() -> [CustomProviderCredentialRecord] {
@@ -862,21 +854,6 @@ class ServerManager: ObservableObject {
             NSLog("[ServerManager] Ignoring custom provider credential file at %@: %@", issue.filePath.path, issue.message)
         }
         return loadResult.records
-    }
-    
-    private func readJSONFile(at file: URL) -> [String: Any]? {
-        guard let data = try? Data(contentsOf: file),
-              let jsonObject = try? JSONSerialization.jsonObject(with: data) else {
-            return nil
-        }
-        return ConfigComposer.stringKeyedDictionary(jsonObject)
-    }
-    
-    private func maskAPIKey(_ apiKey: String) -> String {
-        guard apiKey.count > 12 else {
-            return apiKey
-        }
-        return String(apiKey.prefix(8)) + "..." + String(apiKey.suffix(4))
     }
     
     private func publishConfigError(_ message: String) {
