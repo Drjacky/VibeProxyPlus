@@ -247,6 +247,33 @@ struct ConfigComposerSpec {
             )
         }
 
+        run("validateCustomProviders rejects missing or blank base-url values", recorder: recorder) {
+            let root: [String: Any] = [
+                "openai-compatibility": [
+                    [
+                        "name": "nvidia",
+                        "base-url": "   "
+                    ],
+                    [
+                        "name": "zai",
+                        "base-url": ""
+                    ]
+                ]
+            ]
+
+            let validationErrors = ConfigComposer.validateCustomProviders(
+                in: root,
+                reservedProviderIDs: reservedProviderIDs
+            )
+
+            expectEqual(
+                validationErrors,
+                ["Custom provider 'nvidia' must define a non-empty base-url."],
+                "only non-reserved custom providers with blank base-url should fail validation",
+                recorder: recorder
+            )
+        }
+
         if recorder.failures == 0 {
             print("ConfigComposerSpec: all checks passed")
             Foundation.exit(EXIT_SUCCESS)

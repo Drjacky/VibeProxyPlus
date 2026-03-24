@@ -789,7 +789,7 @@ class ServerManager: ObservableObject {
             .appendingPathComponent(CustomProviderConstants.userConfigFilename)
             .path
         guard FileManager.default.fileExists(atPath: userConfigPath) else {
-            return .success(LoadedBaseConfig(root: bundledRoot, isUserConfig: false))
+            return validatedLoadedBaseConfig(root: bundledRoot, isUserConfig: false)
         }
         
         let userRootResult = loadYAMLDictionary(atPath: userConfigPath)
@@ -800,15 +800,12 @@ class ServerManager: ObservableObject {
             return .failure(ConfigResolutionFailure(message: "Could not load the user config at \(userConfigPath)."))
         }
         
-        return .success(
-            LoadedBaseConfig(
-                root: ConfigComposer.composeAdditiveBaseConfig(
-                bundledRoot: bundledRoot,
-                userRoot: userRoot
-            ),
-                isUserConfig: true
-            )
+        let mergedRoot = ConfigComposer.composeAdditiveBaseConfig(
+            bundledRoot: bundledRoot,
+            userRoot: userRoot
         )
+        
+        return validatedLoadedBaseConfig(root: mergedRoot, isUserConfig: true)
     }
     
     private func loadYAMLDictionary(atPath path: String) -> Result<[String: Any], ConfigResolutionFailure> {
@@ -824,6 +821,24 @@ class ServerManager: ObservableObject {
         } catch {
             return .failure(ConfigResolutionFailure(message: "Failed to parse YAML at \(path): \(error.localizedDescription)"))
         }
+    }
+
+    private func validatedLoadedBaseConfig(
+        root: [String: Any],
+        isUserConfig: Bool
+    ) -> Result<LoadedBaseConfig, ConfigResolutionFailure> {
+        let validationErrors = ConfigComposer.validateCustomProviders(
+            in: root,
+            reservedProviderIDs: Self.reservedCustomProviderKeys
+        )
+        guard validationErrors.isEmpty else {
+            return .failure(
+                ConfigResolutionFailure(
+                    message: "Invalid custom provider configuration. \(validationErrors.joined(separator: " "))"
+                )
+            )
+        }
+        return .success(LoadedBaseConfig(root: root, isUserConfig: isUserConfig))
     }
     
     private func loadZaiAPIKeys() -> [String] {

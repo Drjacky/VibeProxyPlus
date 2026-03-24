@@ -35,7 +35,7 @@ enum ConfigComposer {
                 return CustomProviderDefinition(
                     id: providerID,
                     title: (entry["display-name"] as? String) ?? CustomProviderDefinition.defaultTitle(for: providerID),
-                    baseURL: entry["base-url"] as? String ?? "",
+                    baseURL: normalizedString(entry["base-url"]) ?? "",
                     helpText: entry["help-text"] as? String,
                     iconSystemName: entry["icon-system"] as? String,
                     modelAliases: modelAliases,
@@ -43,6 +43,23 @@ enum ConfigComposer {
                 )
             }
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    static func validateCustomProviders(
+        in root: [String: Any],
+        reservedProviderIDs: Set<String>
+    ) -> [String] {
+        stringKeyedDictionaryArray(root["openai-compatibility"]).compactMap { entry in
+            guard let providerID = normalizedString(entry["name"]),
+                  !reservedProviderIDs.contains(providerID) else {
+                return nil
+            }
+
+            guard normalizedString(entry["base-url"]) != nil else {
+                return "Custom provider '\(providerID)' must define a non-empty base-url."
+            }
+            return nil
+        }
     }
     
     static func composeRuntimeConfig(
@@ -149,6 +166,14 @@ enum ConfigComposer {
             return array.compactMap { $0 as? String }
         }
         return []
+    }
+
+    static func normalizedString(_ value: Any?) -> String? {
+        guard let string = value as? String else {
+            return nil
+        }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     static func isOAuthProviderWildcardExcluded(_ oauthProviderKey: String, in root: [String: Any]) -> Bool {
