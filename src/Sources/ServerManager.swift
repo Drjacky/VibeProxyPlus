@@ -82,6 +82,7 @@ class ServerManager: ObservableObject {
     private var logBuffer: RingBuffer<String>
     private let maxLogLines = 1000
     private let processQueue = DispatchQueue(label: "io.automaze.vibeproxy.server-process", qos: .userInitiated)
+    private lazy var customProviderCredentialStore = CustomProviderCredentialStore(directoryURL: authDirectoryURL())
     private var activeConfigPath = ""
     private var isRestartingForConfigUpdate = false
     private var hasPendingConfigUpdate = false
@@ -93,18 +94,9 @@ class ServerManager: ObservableObject {
     }
     
     private enum CustomProviderConstants {
-        static let authType = "openai-compat"
         static let userConfigFilename = "config.yaml"
         static let mergedConfigFilename = "merged-config.yaml"
         static let managedZAIProviderName = "zai"
-    }
-    
-    private struct StoredCustomProviderAuthRecord {
-        let providerID: String
-        let apiKey: String
-        let label: String
-        let filePath: URL
-        let isDisabled: Bool
     }
 
     private struct LoadedBaseConfig {
@@ -566,30 +558,8 @@ class ServerManager: ObservableObject {
     }
     
     func saveCustomProviderAPIKey(providerID: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
-        let authDir = authDirectoryURL()
-        
         do {
-            try FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
-        } catch {
-            completion(false, "Failed to create auth directory: \(error.localizedDescription)")
-            return
-        }
-        
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-        let filename = "openai-compat-\(sanitizeFilenameComponent(providerID))-\(UUID().uuidString.prefix(8)).json"
-        let filePath = authDir.appendingPathComponent(filename)
-        let authData: [String: Any] = [
-            "type": CustomProviderConstants.authType,
-            "provider": providerID,
-            "label": maskAPIKey(apiKey),
-            "api_key": apiKey,
-            "created": timestamp
-        ]
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: authData, options: .prettyPrinted)
-            try jsonData.write(to: filePath)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: filePath.path)
+            _ = try customProviderCredentialStore.save(providerID: providerID, apiKey: apiKey)
             addLog("✓ Saved API key for custom provider: \(providerID)")
             reloadCustomProviders()
             applyConfigUpdate()
@@ -602,7 +572,7 @@ class ServerManager: ObservableObject {
     @discardableResult
     func deleteCustomProviderCredential(_ credential: CustomProviderCredential) -> Bool {
         do {
-            try FileManager.default.removeItem(at: credential.filePath)
+            try customProviderCredentialStore.delete(filePath: credential.filePath)
             addLog("✓ Removed custom provider key: \(credential.label)")
             reloadCustomProviders()
             applyConfigUpdate()
@@ -616,16 +586,7 @@ class ServerManager: ObservableObject {
     @discardableResult
     func toggleCustomProviderCredentialDisabled(_ credential: CustomProviderCredential) -> Bool {
         do {
-            let data = try Data(contentsOf: credential.filePath)
-            guard var json = ConfigComposer.stringKeyedDictionary(try JSONSerialization.jsonObject(with: data)) else {
-                return false
-            }
-            
-            let currentlyDisabled = json["disabled"] as? Bool ?? false
-            json["disabled"] = !currentlyDisabled
-            let updatedData = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
-            try updatedData.write(to: credential.filePath, options: Data.WritingOptions.atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: credential.filePath.path)
+            _ = try customProviderCredentialStore.toggleDisabled(filePath: credential.filePath)
             reloadCustomProviders()
             applyConfigUpdate()
             return true
@@ -644,8 +605,9 @@ class ServerManager: ObservableObject {
                 reservedProviderIDs: Self.reservedCustomProviderKeys
             )
             let managedProviderIDs = Set(providers.map { $0.id })
+            let credentialRecords = loadCustomProviderCredentialRecords()
             let credentials = Dictionary(
-                grouping: loadCustomProviderAuthRecords().filter { managedProviderIDs.contains($0.providerID) },
+                grouping: credentialRecords.filter { managedProviderIDs.contains($0.providerID) },
                 by: \.providerID
             ).mapValues { records in
                 records
@@ -700,7 +662,7 @@ class ServerManager: ObservableObject {
         
         let authDir = authDirectoryURL()
         let zaiApiKeys = loadZaiAPIKeys()
-        let customAuthRecords = loadCustomProviderAuthRecords()
+        let customAuthRecords = loadCustomProviderCredentialRecords()
         let managedCustomProviders = ConfigComposer.parseCustomProviders(
             from: baseConfig.root,
             reservedProviderIDs: Self.reservedCustomProviderKeys
@@ -879,29 +841,12 @@ class ServerManager: ObservableObject {
         }
     }
     
-    private func loadCustomProviderAuthRecords() -> [StoredCustomProviderAuthRecord] {
-        guard let files = try? FileManager.default.contentsOfDirectory(at: authDirectoryURL(), includingPropertiesForKeys: nil) else {
-            return []
+    private func loadCustomProviderCredentialRecords() -> [CustomProviderCredentialRecord] {
+        let loadResult = customProviderCredentialStore.loadAll()
+        for issue in loadResult.issues {
+            NSLog("[ServerManager] Ignoring custom provider credential file at %@: %@", issue.filePath.path, issue.message)
         }
-        
-        return files.compactMap { file in
-            guard file.pathExtension == "json",
-                  let json = readJSONFile(at: file),
-                  (json["type"] as? String) == CustomProviderConstants.authType,
-                  let providerID = json["provider"] as? String,
-                  !providerID.isEmpty,
-                  let apiKey = json["api_key"] as? String else {
-                return nil
-            }
-            
-            return StoredCustomProviderAuthRecord(
-                providerID: providerID,
-                apiKey: apiKey,
-                label: (json["label"] as? String) ?? maskAPIKey(apiKey),
-                filePath: file,
-                isDisabled: json["disabled"] as? Bool ?? false
-            )
-        }
+        return loadResult.records
     }
     
     private func readJSONFile(at file: URL) -> [String: Any]? {
@@ -919,15 +864,6 @@ class ServerManager: ObservableObject {
         return String(apiKey.prefix(8)) + "..." + String(apiKey.suffix(4))
     }
     
-    private func sanitizeFilenameComponent(_ value: String) -> String {
-        let sanitized = value.replacingOccurrences(
-            of: "[^A-Za-z0-9._-]+",
-            with: "-",
-            options: .regularExpression
-        )
-        return sanitized.isEmpty ? "provider" : sanitized
-    }
-
     private func publishConfigError(_ message: String) {
         let update = {
             let shouldLog = self.configErrorMessage != message
