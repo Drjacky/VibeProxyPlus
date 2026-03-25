@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 enum ConfigInputFingerprint {
     static func relevantFileURLs(
@@ -54,12 +55,19 @@ enum ConfigInputFingerprint {
         for url in urls {
             parts.append(url.lastPathComponent)
             if let data = try? Data(contentsOf: url) {
-                parts.append(data.base64EncodedString())
+                let hash = SHA256.hash(data: data)
+                parts.append(hash.hexEncodedString())
             } else {
                 parts.append("<unreadable>")
             }
         }
 
         return parts.joined(separator: "\n---\n")
+    }
+}
+
+private extension SHA256.Digest {
+    func hexEncodedString() -> String {
+        self.compactMap { String(format: "%02x", $0) }.joined()
     }
 }

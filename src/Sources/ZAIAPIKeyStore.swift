@@ -149,7 +149,7 @@ final class ZAIAPIKeyStore {
             )
         }
 
-        guard let json = stringKeyedDictionary(jsonObject) else {
+        guard let json = ConfigComposer.stringKeyedDictionary(jsonObject) else {
             throw ZAIAPIKeyStoreError.malformedKey(
                 "Z.AI API key file at \(filePath.path) must contain a JSON object."
             )
@@ -172,23 +172,6 @@ final class ZAIAPIKeyStore {
 
     private func isManagedKeyFile(_ file: URL) -> Bool {
         file.lastPathComponent.hasPrefix("zai-") && file.pathExtension == "json"
-    }
-
-    private func stringKeyedDictionary(_ value: Any) -> [String: Any]? {
-        if let dictionary = value as? [String: Any] {
-            return dictionary
-        }
-        if let dictionary = value as? [AnyHashable: Any] {
-            var stringDictionary: [String: Any] = [:]
-            for (key, nestedValue) in dictionary {
-                guard let stringKey = key as? String else {
-                    continue
-                }
-                stringDictionary[stringKey] = nestedValue
-            }
-            return stringDictionary
-        }
-        return nil
     }
 
     private func maskAPIKey(_ apiKey: String) -> String {
