@@ -8,12 +8,30 @@ struct ConfigProviderAuthRecord: Equatable {
 
 enum ConfigComposer {
     static let uiMetadataKeys: Set<String> = ["display-name", "help-text", "icon-system"]
+    static let runtimeEditableTopLevelKeys: Set<String> = ["api-keys"]
     
     static func composeAdditiveBaseConfig(bundledRoot: [String: Any], userRoot: [String: Any]?) -> [String: Any] {
         guard let userRoot else {
             return bundledRoot
         }
         return mergeDictionary(bundledRoot, overlaidWith: userRoot)
+    }
+
+    static func preservingRuntimeEditableTopLevelKeys(
+        in root: [String: Any],
+        from runtimeRoot: [String: Any]?
+    ) -> [String: Any] {
+        guard let runtimeRoot else {
+            return root
+        }
+
+        var mergedRoot = root
+        for key in runtimeEditableTopLevelKeys where mergedRoot[key] == nil {
+            if let runtimeValue = runtimeRoot[key] {
+                mergedRoot[key] = runtimeValue
+            }
+        }
+        return mergedRoot
     }
     
     static func parseCustomProviders(

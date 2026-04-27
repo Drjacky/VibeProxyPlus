@@ -209,7 +209,7 @@ struct ServiceRow<ExtraContent: View>: View {
                     if isExpanded {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(accounts) { account in
-                                AccountRowView(account: account, removeColor: removeColor, showDisableToggle: accounts.count > 1, isLastEnabled: !account.isDisabled && enabledCount <= 1, onToggleDisabled: {
+                                AccountRowView(account: account, removeColor: removeColor, showDisableToggle: accounts.count > 1 || account.isDisabled, isLastEnabled: !account.isDisabled && enabledCount <= 1, onToggleDisabled: {
                                     onToggleDisabled(account)
                                 }) {
                                     accountToRemove = account

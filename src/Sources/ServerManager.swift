@@ -739,7 +739,7 @@ class ServerManager: ObservableObject {
     private func resolveConfigPath(
         enabledProviderStates: [String: Bool]
     ) -> Result<String, ConfigResolutionFailure> {
-        guard let bundledConfigPath = bundledConfigPath() else {
+        guard bundledConfigPath() != nil else {
             return .failure(ConfigResolutionFailure(message: "Could not locate the bundled config.yaml in the app bundle."))
         }
         let baseConfigResult = loadBaseConfigRoot()
@@ -771,18 +771,7 @@ class ServerManager: ObservableObject {
                 enabledProviderStates: enabledProviderStates
             )
         }
-        let needsMergedConfig =
-            baseConfig.isUserConfig ||
-            !zaiApiKeys.isEmpty ||
-            !disabledProviders.isEmpty ||
-            !disabledCustomProviderIDs.isEmpty ||
-            !customAuthRecords.isEmpty
-        
-        guard needsMergedConfig else {
-            return .success(bundledConfigPath)
-        }
-        
-        let mergedRoot = ConfigComposer.composeRuntimeConfig(
+        var mergedRoot = ConfigComposer.composeRuntimeConfig(
             baseRoot: baseConfig.root,
             reservedCustomProviderKeys: ProviderCatalog.reservedCustomProviderKeys,
             disabledCustomProviderIDs: disabledCustomProviderIDs,
@@ -804,6 +793,14 @@ class ServerManager: ObservableObject {
         )
         
         let mergedConfigPath = authDir.appendingPathComponent(CustomProviderConstants.mergedConfigFilename)
+        if mergedRoot["api-keys"] == nil,
+           case .success(let existingRuntimeRoot) = loadYAMLDictionary(atPath: mergedConfigPath.path) {
+            mergedRoot = ConfigComposer.preservingRuntimeEditableTopLevelKeys(
+                in: mergedRoot,
+                from: existingRuntimeRoot
+            )
+        }
+
         do {
             try FileManager.default.createDirectory(at: authDir, withIntermediateDirectories: true)
             let mergedContent = try Yams.dump(object: mergedRoot)
