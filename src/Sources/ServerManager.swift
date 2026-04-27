@@ -52,6 +52,7 @@ private struct RingBuffer<Element> {
 
 class ServerManager: ObservableObject {
     private var process: Process?
+    private var activeAuthProcess: Process?
     @Published private(set) var isRunning = false
     private(set) var port = 8317
     @Published private(set) var customProviders: [CustomProviderDefinition] = []
@@ -204,6 +205,7 @@ class ServerManager: ObservableObject {
     
     deinit {
         // Ensure cleanup on deallocation
+        terminateActiveAuthProcessIfNeeded(reason: "deinit cleanup")
         stop()
         killOrphanedProcesses()
     }
@@ -347,6 +349,9 @@ class ServerManager: ObservableObject {
     }
     
     func runAuthCommand(_ command: AuthCommand, completion: @escaping (Bool, String) -> Void) {
+        terminateActiveAuthProcessIfNeeded(reason: "starting a new auth attempt")
+        cleanupStaleAuthProcesses()
+
         // Use bundled binary from app bundle
         guard let resourcePath = Bundle.main.resourcePath else {
             completion(false, "Could not find resource path")
@@ -452,26 +457,25 @@ class ServerManager: ObservableObject {
         
         // Set environment to inherit from parent
         authProcess.environment = ProcessInfo.processInfo.environment
+
+        authProcess.terminationHandler = { [weak self] process in
+            let exitCode = process.terminationStatus
+            NSLog("[Auth] Process terminated with exit code: %d", exitCode)
+            self?.clearActiveAuthProcess(process)
+
+            if exitCode == 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    NotificationCenter.default.post(name: .authDirectoryChanged, object: nil)
+                }
+            }
+        }
         
         do {
             NSLog("[Auth] Starting process: %@ with args: %@", bundledPath, authProcess.arguments?.joined(separator: " ") ?? "none")
+            activeAuthProcess = authProcess
             try authProcess.run()
             addLog("✓ Authentication process started (PID: \(authProcess.processIdentifier)) - browser should open shortly")
             NSLog("[Auth] Process started with PID: %d", authProcess.processIdentifier)
-            
-            // Set up termination handler to detect when auth completes
-            authProcess.terminationHandler = { process in
-                let exitCode = process.terminationStatus
-                NSLog("[Auth] Process terminated with exit code: %d", exitCode)
-                
-                if exitCode == 0 {
-                    // Authentication completed successfully
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        // Give file system a moment to write the credential file
-                        NotificationCenter.default.post(name: .authDirectoryChanged, object: nil)
-                    }
-                }
-            }
             
             // Wait briefly to check if process crashes immediately or to capture output
             let waitTime: TimeInterval = (command == .copilotLogin) ? 2.0 : 1.0
@@ -538,8 +542,81 @@ class ServerManager: ObservableObject {
                 }
             }
         } catch {
+            clearActiveAuthProcess(authProcess)
             NSLog("[Auth] Failed to start: %@", error.localizedDescription)
             completion(false, "Failed to start auth process: \(error.localizedDescription)")
+        }
+    }
+
+    private func terminateActiveAuthProcessIfNeeded(reason: String) {
+        guard let authProcess = activeAuthProcess else {
+            return
+        }
+
+        if authProcess.isRunning {
+            addLog("⚠️ Terminating previous auth process (\(authProcess.processIdentifier)) before retry: \(reason)")
+            authProcess.terminate()
+
+            let deadline = Date().addingTimeInterval(Timing.gracefulTerminationTimeout)
+            while authProcess.isRunning && Date() < deadline {
+                Thread.sleep(forTimeInterval: Timing.terminationPollInterval)
+            }
+
+            if authProcess.isRunning {
+                kill(authProcess.processIdentifier, SIGKILL)
+            }
+        }
+
+        activeAuthProcess = nil
+    }
+
+    private func clearActiveAuthProcess(_ process: Process) {
+        if activeAuthProcess === process {
+            activeAuthProcess = nil
+        }
+    }
+
+    private func cleanupStaleAuthProcesses() {
+        let backendPID = process?.processIdentifier
+        let patterns = [
+            "cli-proxy-api-plus.*-claude-login",
+            "cli-proxy-api-plus.*-codex-login",
+            "cli-proxy-api-plus.*-github-copilot-login",
+            "cli-proxy-api-plus.*-qwen-login",
+            "cli-proxy-api-plus.*-antigravity-login",
+            "cli-proxy-api-plus.* -login"
+        ]
+
+        for pattern in patterns {
+            let checkTask = Process()
+            checkTask.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+            checkTask.arguments = ["-f", pattern]
+
+            let outputPipe = Pipe()
+            checkTask.standardOutput = outputPipe
+            checkTask.standardError = Pipe()
+
+            do {
+                try checkTask.run()
+                checkTask.waitUntilExit()
+                guard checkTask.terminationStatus == 0 else {
+                    continue
+                }
+
+                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                let pids = output.components(separatedBy: .newlines).compactMap { Int32($0) }
+
+                for pid in pids {
+                    if pid == backendPID {
+                        continue
+                    }
+                    kill(pid, SIGKILL)
+                    addLog("⚠️ Cleaned up stale auth listener process: \(pid)")
+                }
+            } catch {
+                // best-effort cleanup only
+            }
         }
     }
     

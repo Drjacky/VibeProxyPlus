@@ -11,23 +11,23 @@ permissions:
 
 jobs:
   get-cliproxy-version:
-    name: Get CLIProxyAPIPlus Version
+    name: Get CLIProxyAPI Version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       tag: ${{ steps.get_version.outputs.tag }}
     steps:
-      - name: Get latest CLIProxyAPIPlus release
+      - name: Get latest CLIProxyAPI release
         id: get_version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Use gh CLI with authentication to avoid rate limiting
-          LATEST_TAG=$(gh release view --repo router-for-me/CLIProxyAPIPlus --json tagName -q '.tagName')
+          LATEST_TAG=$(gh release view --repo router-for-me/CLIProxyAPI --json tagName -q '.tagName')
           VERSION=${LATEST_TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Found CLIProxyAPIPlus version: $VERSION (tag: $LATEST_TAG)"
+          echo "Found CLIProxyAPI version: $VERSION (tag: $LATEST_TAG)"
 
   build-signed:
     name: Build and Sign macOS App (${{ matrix.arch }})
@@ -71,17 +71,17 @@ jobs:
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION} (build ${BUILD_NUMBER}) for ${{ matrix.arch }}"
 
-      - name: Download CLIProxyAPIPlus for ${{ matrix.arch }}
+      - name: Download CLIProxyAPI for ${{ matrix.arch }}
         run: |
           set -e
           
           # Use version from pre-fetch job
           VERSION="${{ needs.get-cliproxy-version.outputs.version }}"
           LATEST_TAG="${{ needs.get-cliproxy-version.outputs.tag }}"
-          echo "Using CLIProxyAPIPlus version: $VERSION (tag: $LATEST_TAG)"
+          echo "Using CLIProxyAPI version: $VERSION (tag: $LATEST_TAG)"
           
-          FILENAME="CLIProxyAPIPlus_${VERSION}_${{ matrix.cliproxy_arch }}.tar.gz"
-          URL="https://github.com/router-for-me/CLIProxyAPIPlus/releases/download/$LATEST_TAG/$FILENAME"
+          FILENAME="CLIProxyAPI_${VERSION}_${{ matrix.cliproxy_arch }}.tar.gz"
+          URL="https://github.com/router-for-me/CLIProxyAPI/releases/download/$LATEST_TAG/$FILENAME"
           
           echo "Downloading: $URL"
           curl -L -f --retry 3 --retry-delay 5 -o cliproxy.tar.gz "$URL"
@@ -91,8 +91,8 @@ jobs:
           TEMP_DIR=$(mktemp -d)
           tar -xzf cliproxy.tar.gz -C "$TEMP_DIR"
           
-          # Find the binary (could be CLIProxyAPIPlus or cli-proxy-api-plus)
-          BINARY=$(find "$TEMP_DIR" -type f \( -name "CLIProxyAPIPlus" -o -name "cli-proxy-api-plus" \) | head -1)
+          # Find the binary by expected CLIProxyAPI names.
+          BINARY=$(find "$TEMP_DIR" -type f \( -name "CLIProxyAPI" -o -name "cli-proxy-api" -o -name "CLIProxyAPIPlus" -o -name "cli-proxy-api-plus" \) | head -1)
           if [ -z "$BINARY" ]; then
             # Fallback: find any executable that's not a text file
             BINARY=$(find "$TEMP_DIR" -type f -perm +111 | head -1)
