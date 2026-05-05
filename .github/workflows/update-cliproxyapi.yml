@@ -72,17 +72,27 @@ jobs:
             exit 1
           fi
 
+          DARWIN_ASSET_NAME=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | test("^CLIProxyAPI_.+_darwin_(aarch64|arm64)\\.tar\\.gz$")) | .name' | head -n 1)
+          DARWIN_ASSET_URL=$(echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | test("^CLIProxyAPI_.+_darwin_(aarch64|arm64)\\.tar\\.gz$")) | .browser_download_url' | head -n 1)
+          
+          if [ -z "$DARWIN_ASSET_NAME" ] || [ "$DARWIN_ASSET_NAME" = "null" ] || [ -z "$DARWIN_ASSET_URL" ] || [ "$DARWIN_ASSET_URL" = "null" ]; then
+            echo "Error: Failed to find a Darwin ARM CLIProxyAPI asset in latest release" >&2
+            echo "Available assets:" >&2
+            echo "$LATEST_JSON" | jq -r '.assets[].name' >&2
+            exit 1
+          fi
+
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "darwin_asset_name=$DARWIN_ASSET_NAME" >> $GITHUB_OUTPUT
+          echo "darwin_asset_url=$DARWIN_ASSET_URL" >> $GITHUB_OUTPUT
           echo "Found latest version: $VERSION"
 
       - name: Download and Install CLIProxyAPI
         run: |
           set -e
-          VERSION="${{ steps.get-latest-release.outputs.version }}"
-          TAG="${{ steps.get-latest-release.outputs.latest_tag }}"
-          FILENAME="CLIProxyAPI_${VERSION}_darwin_arm64.tar.gz"
-          URL="https://github.com/router-for-me/CLIProxyAPI/releases/download/$TAG/$FILENAME"
+          FILENAME="${{ steps.get-latest-release.outputs.darwin_asset_name }}"
+          URL="${{ steps.get-latest-release.outputs.darwin_asset_url }}"
           TARGET_DIR="src/Sources/Resources"
           TARGET_FILE="$TARGET_DIR/cli-proxy-api-plus"
           

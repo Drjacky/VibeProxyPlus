@@ -37,11 +37,11 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            cliproxy_arch: darwin_arm64
+            cliproxy_asset_regex: darwin_(aarch64|arm64)
             swift_arch: arm64
             tested: true
           - arch: x86_64
-            cliproxy_arch: darwin_amd64
+            cliproxy_asset_regex: darwin_amd64
             swift_arch: x86_64
             tested: false
 
@@ -72,6 +72,8 @@ jobs:
           echo "Building version: ${VERSION} (build ${BUILD_NUMBER}) for ${{ matrix.arch }}"
 
       - name: Download CLIProxyAPI for ${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           
@@ -80,8 +82,16 @@ jobs:
           LATEST_TAG="${{ needs.get-cliproxy-version.outputs.tag }}"
           echo "Using CLIProxyAPI version: $VERSION (tag: $LATEST_TAG)"
           
-          FILENAME="CLIProxyAPI_${VERSION}_${{ matrix.cliproxy_arch }}.tar.gz"
-          URL="https://github.com/router-for-me/CLIProxyAPI/releases/download/$LATEST_TAG/$FILENAME"
+          RELEASE_JSON=$(gh api "repos/router-for-me/CLIProxyAPI/releases/tags/$LATEST_TAG")
+          ASSET_REGEX="^CLIProxyAPI_.+_${{ matrix.cliproxy_asset_regex }}\\.tar\\.gz$"
+          FILENAME=$(echo "$RELEASE_JSON" | jq -r --arg regex "$ASSET_REGEX" '.assets[] | select(.name | test($regex)) | .name' | head -n 1)
+          URL=$(echo "$RELEASE_JSON" | jq -r --arg regex "$ASSET_REGEX" '.assets[] | select(.name | test($regex)) | .browser_download_url' | head -n 1)
+          
+          if [ -z "$FILENAME" ] || [ "$FILENAME" = "null" ] || [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "Error: Failed to resolve CLIProxyAPI asset for ${{ matrix.arch }}" >&2
+            echo "$RELEASE_JSON" | jq -r '.assets[].name' >&2
+            exit 1
+          fi
           
           echo "Downloading: $URL"
           curl -L -f --retry 3 --retry-delay 5 -o cliproxy.tar.gz "$URL"
