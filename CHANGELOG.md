@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.8.50] - 2026-01-13
 
+## [1.8.147] - 2026-05-11
+
+### Updated
+- **CLIProxyAPI 7.0.2** - Latest upstream release (#359)
+  - Various upstream improvements and stability enhancements
+
+
 ## [1.8.146] - 2026-05-10
 
 ### Updated
@@ -1436,6 +1443,7 @@ All future changes will be documented here before release.
 
 ---
 
+[1.8.147]: https://github.com/automazeio/vibeproxy/releases/tag/v1.8.147
 [1.8.146]: https://github.com/automazeio/vibeproxy/releases/tag/v1.8.146
 [1.8.145]: https://github.com/automazeio/vibeproxy/releases/tag/v1.8.145
 [1.8.144]: https://github.com/automazeio/vibeproxy/releases/tag/v1.8.144
