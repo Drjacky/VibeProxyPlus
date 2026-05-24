@@ -130,7 +130,6 @@ echo -n "APPL????" > "$APP_DIR/Contents/PkgInfo"
 echo -e "${BLUE}Signing app...${NC}"
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 if [ -z "$CODESIGN_IDENTITY" ]; then
-    # Try to find Developer ID automatically
     CODESIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/')
 fi
 
