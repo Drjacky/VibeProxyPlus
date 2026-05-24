@@ -22,6 +22,7 @@ jobs:
       - name: Fetch CLIProxyAPIPlus
         env:
           TARGET_ARCH: arm64
+          GH_TOKEN: ${{ github.token }}
         run: |
           chmod +x scripts/fetch-cliproxy-plus.sh
           ./scripts/fetch-cliproxy-plus.sh
