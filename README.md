@@ -31,6 +31,7 @@ Built on [CLIProxyAPIPlus](https://github.com/router-for-me/CLIProxyAPIPlus), it
 > 
 > **Setup Guides:**
 > - [Factory CLI Setup →](FACTORY_SETUP.md) - Use Factory Droids with your AI subscriptions
+> - [Cursor provider (fork) →](CURSOR_SETUP.md) - Use your Cursor subscription via localhost:8317
 > - [Amp CLI Setup →](AMPCODE_SETUP.md) - Use Amp CLI with fallback to your subscriptions
 
 ---

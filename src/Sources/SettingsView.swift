@@ -123,6 +123,8 @@ struct ServiceRow<ExtraContent: View>: View {
     let disabledReasonText: String?
     let customTitle: String?
     let onConnect: () -> Void
+    var onFetchAuthLocally: (() -> Void)? = nil
+    var isFetchingAuthLocally: Bool = false
     let onDisconnect: (AuthAccount) -> Void
     let onToggleDisabled: (AuthAccount) -> Void
     let onToggleEnabled: (Bool) -> Void
@@ -175,10 +177,20 @@ struct ServiceRow<ExtraContent: View>: View {
                     ProgressView()
                         .controlSize(.small)
                 } else if isEnabled {
-                    Button("Add Account") {
-                        onConnect()
+                    HStack(spacing: 6) {
+                        Button("Add Account") {
+                            onConnect()
+                        }
+                        .controlSize(.small)
+
+                        if let onFetchAuthLocally {
+                            Button("Fetch Auth Locally") {
+                                onFetchAuthLocally()
+                            }
+                            .controlSize(.small)
+                            .disabled(isFetchingAuthLocally)
+                        }
                     }
-                    .controlSize(.small)
                 }
             }
             
@@ -510,6 +522,7 @@ struct SettingsView: View {
     @StateObject private var authManager = AuthManager()
     @State private var launchAtLogin = false
     @State private var authenticatingService: ServiceType? = nil
+    @State private var fetchingCursorAuthLocally = false
     @State private var authenticatingCustomProviderID: String? = nil
     @State private var showingAuthResult = false
     @State private var authResultMessage = ""
@@ -695,6 +708,27 @@ struct SettingsView: View {
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
                         onToggleEnabled: { enabled in serverManager.setProviderEnabled("github-copilot", enabled: enabled) },
+                        onExpandChange: { expanded in expandedRowCount += expanded ? 1 : -1 }
+                    ) { EmptyView() }
+
+                    ServiceRow(
+                        serviceType: .cursor,
+                        iconName: "icon-cursor.png",
+                        iconSystemName: "cursorarrow.rays",
+                        accounts: authManager.accounts(for: .cursor),
+                        isAuthenticating: authenticatingService == .cursor,
+                        helpText: "Use your Cursor subscription through the proxy. Fetch Auth Locally reads tokens from Cursor IDE on this Mac.",
+                        isEnabled: serverManager.isProviderEnabled("cursor"),
+                        isToggleLocked: serverManager.isProviderToggleLocked("cursor"),
+                        toggleHelpText: serverManager.providerConfigLockReason("cursor"),
+                        disabledReasonText: serverManager.providerConfigLockReason("cursor"),
+                        customTitle: nil,
+                        onConnect: { connectService(.cursor) },
+                        onFetchAuthLocally: { fetchCursorAuthLocally() },
+                        isFetchingAuthLocally: fetchingCursorAuthLocally,
+                        onDisconnect: { account in disconnectAccount(account) },
+                        onToggleDisabled: { account in toggleAccountDisabled(account) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("cursor", enabled: enabled) },
                         onExpandChange: { expanded in expandedRowCount += expanded ? 1 : -1 }
                     ) { EmptyView() }
 
@@ -1014,6 +1048,40 @@ struct SettingsView: View {
             return "🌐 Browser opened for Antigravity authentication.\n\nPlease complete the login in your browser."
         case .zai:
             return "✓ Z.AI API key added successfully.\n\nYou can now use GLM models through the proxy."
+        case .cursor:
+            return "🌐 Browser opened for Cursor authentication.\n\nComplete login in your browser.\n\nThe app will detect credentials automatically."
+        }
+    }
+
+    private func fetchCursorAuthLocally() {
+        fetchingCursorAuthLocally = true
+        NSLog("[SettingsView] Fetching Cursor auth from local vscdb")
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let outcome: (Bool, String) = {
+                do {
+                    if let result = try CursorTokenImporter.shared.importTokens(force: true) {
+                        if result.skippedUnchanged {
+                            return (true, "✓ Cursor tokens are already up to date.")
+                        }
+                        return (
+                            true,
+                            "✓ Cursor tokens imported to ~/.cli-proxy-api/\(result.fileURL.lastPathComponent).\n\nPoint clients at http://localhost:8317 to use Cursor models."
+                        )
+                    }
+                    return (false, "No Cursor session found. Open Cursor IDE, sign in, then try again.")
+                } catch {
+                    return (false, error.localizedDescription)
+                }
+            }()
+
+            DispatchQueue.main.async {
+                self.fetchingCursorAuthLocally = false
+                self.authManager.checkAuthStatus()
+                self.authResultSuccess = outcome.0
+                self.authResultMessage = outcome.1
+                self.showingAuthResult = true
+            }
         }
     }
     

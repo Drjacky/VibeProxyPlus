@@ -26,7 +26,10 @@ enum ConfigInputFingerprint {
             guard file.pathExtension == "json" else {
                 return false
             }
-            return name.hasPrefix("zai-") || name.hasPrefix("openai-compat-")
+            return name.hasPrefix("zai-")
+                || name.hasPrefix("openai-compat-")
+                || name == "cursor.json"
+                || name.hasPrefix("cursor.")
         }
         .sorted { $0.lastPathComponent < $1.lastPathComponent }
 

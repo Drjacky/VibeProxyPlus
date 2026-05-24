@@ -23,6 +23,8 @@ extension ServiceType {
             return .authCommand(.antigravityLogin)
         case .zai:
             return .promptForZAIAPIKey
+        case .cursor:
+            return .authCommand(.cursorLogin)
         }
     }
 }

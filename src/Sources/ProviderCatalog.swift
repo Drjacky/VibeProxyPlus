@@ -11,7 +11,8 @@ enum ProviderCatalog {
         "kimi": "kimi",
         "github-copilot": "github-copilot",
         "antigravity": "antigravity",
-        "qwen": "qwen"
+        "qwen": "qwen",
+        "cursor": "cursor"
     ]
 
     static let reservedCustomProviderKeys = Set(oauthProviderKeys.keys)

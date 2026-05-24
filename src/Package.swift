@@ -23,6 +23,9 @@ let package = Package(
             path: "Sources",
             resources: [
                 .copy("Resources")
+            ],
+            linkerSettings: [
+                .linkedLibrary("sqlite3")
             ]
         ),
         .testTarget(

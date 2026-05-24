@@ -59,12 +59,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
 
         // Monitor auth directory for credential file changes (app-lifetime scope)
         startMonitoringAuthDirectory()
+        startCursorTokenImport()
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleAuthDirectoryChanged),
             name: .authDirectoryChanged,
             object: nil
         )
+    }
+
+    private func startCursorTokenImport() {
+        CursorTokenImporter.shared.startMonitoring { [weak self] in
+            self?.postObservedConfigInputsChanged(reason: "Cursor IDE auth storage changed")
+        }
+
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                if try CursorTokenImporter.shared.importTokens(force: false) != nil {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .authDirectoryChanged, object: nil)
+                    }
+                }
+            } catch {
+                NSLog("[CursorTokenImporter] Launch import skipped: %@", error.localizedDescription)
+            }
+        }
     }
     
     private func preloadIcons() {
@@ -380,6 +399,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self, name: .serverStatusChanged, object: nil)
         NotificationCenter.default.removeObserver(self, name: .authDirectoryChanged, object: nil)
+        CursorTokenImporter.shared.stopMonitoring()
         pendingAuthRefresh?.cancel()
         authFileMonitor?.cancel()
         authFileMonitor = nil

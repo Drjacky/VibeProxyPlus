@@ -9,6 +9,7 @@ enum ServiceType: String, CaseIterable {
     case qwen
     case antigravity
     case zai
+    case cursor
     
     var displayName: String {
         switch self {
@@ -20,6 +21,7 @@ enum ServiceType: String, CaseIterable {
         case .qwen: return "Qwen"
         case .antigravity: return "Antigravity"
         case .zai: return "Z.AI GLM"
+        case .cursor: return "Cursor"
         }
     }
 }
@@ -90,6 +92,15 @@ class AuthManager: ObservableObject {
         serviceAccounts[type]?.hasAccounts ?? false
     }
     
+    private static func parseDate(_ value: String) -> Date? {
+        for formatter in dateFormatters {
+            if let date = formatter.date(from: value) {
+                return date
+            }
+        }
+        return nil
+    }
+
     func checkAuthStatus() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
         
@@ -119,12 +130,9 @@ class AuthManager: ObservableObject {
                 var expiredDate: Date?
                 
                 if let expiredStr = json["expired"] as? String {
-                    for formatter in Self.dateFormatters {
-                        if let date = formatter.date(from: expiredStr) {
-                            expiredDate = date
-                            break
-                        }
-                    }
+                    expiredDate = Self.parseDate(expiredStr)
+                } else if let expiresAt = json["expires_at"] as? String {
+                    expiredDate = Self.parseDate(expiresAt)
                 }
                 
                 let isDisabled = json["disabled"] as? Bool ?? false
