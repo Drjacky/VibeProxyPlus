@@ -1,10 +1,11 @@
 # VibeProxyPlus
 
 <p align="center">
-  <img src="icon.png" width="128" height="128" alt="VibeProxyPlus icon">
+  <img src="icon.png" width="256" height="256" alt="VibeProxyPlus icon">
 </p>
 
 <p align="center">
+  <a href="https://github.com/Drjacky/VibeProxyPlus/actions"><img src="https://github.com/Drjacky/VibeProxyPlus/workflows/Build/badge.svg" alt="Build"></a>
   <a href="https://github.com/Drjacky/vibeproxyplus/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745"></a>
   <a href="https://github.com/Drjacky/vibeproxyplus"><img alt="GitHub" src="https://img.shields.io/github/stars/Drjacky/vibeproxyplus.svg?style=social&label=Star"></a>
 </p>

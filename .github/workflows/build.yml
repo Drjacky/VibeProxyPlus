@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: Fetch CLIProxyAPIPlus
+        env:
+          TARGET_ARCH: arm64
+        run: |
+          chmod +x scripts/fetch-cliproxy-plus.sh
+          ./scripts/fetch-cliproxy-plus.sh
+
+      - name: Build (release)
+        run: cd src && swift build -c release
+
+      - name: Test
+        run: cd src && swift test
