@@ -1,23 +1,27 @@
 import Foundation
 
-/// Fork-specific URLs. Upstream sync should not overwrite this file.
-/// See README.md (Maintaining this fork) at the repository root.
+/// Project URLs for this fork. Upstream sync should not overwrite this file.
 enum ForkConfig {
-    static let upstreamOwner = "automazeio"
-    static let upstreamRepo = "vibeproxy"
-    static let forkOwner = "Drjacky"
-    static let forkRepo = "vibeproxyplus"
+    static let owner = "Drjacky"
+    static let repo = "vibeproxyplus"
 
-    static var upstreamRepositoryURL: URL {
-        URL(string: "https://github.com/\(upstreamOwner)/\(upstreamRepo)")!
+    static var repositoryURL: URL {
+        URL(string: "https://github.com/\(owner)/\(repo)")!
     }
 
-    static var forkRepositoryURL: URL {
-        URL(string: "https://github.com/\(forkOwner)/\(forkRepo)")!
+    static var issuesURL: URL {
+        repositoryURL.appendingPathComponent("issues")
     }
 
-    /// Issues for bugs in this fork (e.g. Cursor provider). Upstream bugs: upstream repo issues.
-    static var forkIssuesURL: URL {
-        forkRepositoryURL.appendingPathComponent("issues")
+    static var releasesURL: URL {
+        repositoryURL.appendingPathComponent("releases")
+    }
+
+    static var appcastURL: URL {
+        URL(string: "https://raw.githubusercontent.com/\(owner)/\(repo)/main/appcast.xml")!
+    }
+
+    static var appcastX86URL: URL {
+        URL(string: "https://raw.githubusercontent.com/\(owner)/\(repo)/main/appcast-x86_64.xml")!
     }
 }

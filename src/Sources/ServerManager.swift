@@ -87,10 +87,10 @@ class ServerManager: ObservableObject {
     }
     private var logBuffer: RingBuffer<String>
     private let maxLogLines = 1000
-    private let processQueue = DispatchQueue(label: "io.automaze.vibeproxy.server-process", qos: .userInitiated)
-    private let credentialMutationQueue = DispatchQueue(label: "io.automaze.vibeproxy.credential-mutations", qos: .userInitiated)
-    private let configInputStateQueue = DispatchQueue(label: "io.automaze.vibeproxy.config-input-state", qos: .userInitiated)
-    private let configResolutionQueue = DispatchQueue(label: "io.automaze.vibeproxy.config-resolution", qos: .userInitiated)
+    private let processQueue = DispatchQueue(label: "com.github.drjacky.server-process", qos: .userInitiated)
+    private let credentialMutationQueue = DispatchQueue(label: "com.github.drjacky.credential-mutations", qos: .userInitiated)
+    private let configInputStateQueue = DispatchQueue(label: "com.github.drjacky.config-input-state", qos: .userInitiated)
+    private let configResolutionQueue = DispatchQueue(label: "com.github.drjacky.config-resolution", qos: .userInitiated)
     private lazy var zaiAPIKeyStore = ZAIAPIKeyStore(directoryURL: authDirectoryURL())
     private lazy var customProviderCredentialStore = CustomProviderCredentialStore(directoryURL: authDirectoryURL())
     private var activeConfigPath = ""

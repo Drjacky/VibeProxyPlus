@@ -58,7 +58,7 @@ final class CustomProviderCredentialStore {
     init(
         directoryURL: URL,
         fileManager: FileManager = .default,
-        queueLabel: String = "io.automaze.vibeproxy.custom-provider-credentials"
+        queueLabel: String = "com.github.drjacky.custom-provider-credentials"
     ) {
         self.directoryURL = directoryURL
         self.fileManager = fileManager

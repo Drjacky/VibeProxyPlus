@@ -41,7 +41,7 @@ final class ZAIAPIKeyStore {
     init(
         directoryURL: URL,
         fileManager: FileManager = .default,
-        queueLabel: String = "io.automaze.vibeproxy.zai-api-keys"
+        queueLabel: String = "com.github.drjacky.zai-api-keys"
     ) {
         self.directoryURL = directoryURL
         self.fileManager = fileManager

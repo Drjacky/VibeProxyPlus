@@ -797,7 +797,7 @@ struct SettingsView: View {
                     Text("VibeProxyPlus \(appVersion) was made possible thanks to")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Link("CLIProxyAPIPlus", destination: URL(string: "https://github.com/router-for-me/CLIProxyAPIPlus")!)
+                    Link("CLIProxyAPIPlus", destination: URL(string: "https://github.com/kaitranntt/CLIProxyAPIPlus")!)
                         .font(.caption)
                         .underline()
                         .foregroundColor(.secondary)
@@ -816,19 +816,16 @@ struct SettingsView: View {
                     Text("© 2026")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Link("Automaze, Ltd.", destination: URL(string: "https://automaze.io")!)
+                    Link("Drjacky", destination: ForkConfig.repositoryURL)
                         .font(.caption)
                         .underline()
                         .foregroundColor(.secondary)
                         .onHover { inside in
                             if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                         }
-                    Text("All rights reserved.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
 
-                Link("Report an issue", destination: ForkConfig.forkIssuesURL)
+                Link("Report an issue", destination: ForkConfig.issuesURL)
                     .font(.caption)
                     .padding(.top, 6)
                     .onHover { inside in

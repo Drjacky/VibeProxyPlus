@@ -11,7 +11,7 @@
 
 Native macOS menu bar app that routes your existing AI subscriptions through a local OpenAI-compatible proxy (`http://localhost:8317`).
 
-**VibeProxyPlus** is built on top of [VibeProxy](https://github.com/automazeio/vibeproxy) and uses [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus), an excellent unified proxy server for AI services with support for third-party providers (including Cursor).
+**VibeProxyPlus** is built on top of the open-source [VibeProxy](https://github.com/automazeio/vibeproxy) macOS UI and uses [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus), an excellent unified proxy server for AI services with support for third-party providers (including Cursor).
 
 Pre-built apps: **[Releases](https://github.com/Drjacky/vibeproxyplus/releases)**
 
@@ -125,7 +125,7 @@ cd src && swift test
 
 ## Maintaining this project
 
-VibeProxyPlus tracks [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) for the macOS UI while shipping **CLIProxyAPIPlus** from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus).
+VibeProxyPlus can optionally merge macOS UI changes from upstream [VibeProxy](https://github.com/automazeio/vibeproxy) while shipping **CLIProxyAPIPlus** from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus).
 
 The ~50MB `cli-proxy-api-plus` binary is **not in git** (fetched at build time). See `scripts/fetch-cliproxy-plus.sh` and `cli-proxy-api-plus.version`.
 
@@ -161,7 +161,7 @@ git push origin v1.0.0-plus.1
 
 ## Credits
 
-- [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) - original macOS menu bar app
+- [VibeProxy](https://github.com/automazeio/vibeproxy) - original macOS menu bar app
 - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) - unified proxy server (Cursor and other providers)
 
 ---

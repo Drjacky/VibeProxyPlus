@@ -28,7 +28,7 @@ class ThinkingProxy {
     private let targetPort: UInt16 = 8318
     private let targetHost = "127.0.0.1"
     private(set) var isRunning = false
-    private let stateQueue = DispatchQueue(label: "io.automaze.vibeproxy.thinking-proxy-state")
+    private let stateQueue = DispatchQueue(label: "com.github.drjacky.thinking-proxy-state")
 
     var vercelConfig = VercelGatewayConfig(enabled: false, apiKey: "")
     

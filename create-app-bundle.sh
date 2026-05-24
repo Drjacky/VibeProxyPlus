@@ -13,7 +13,7 @@ NC='\033[0m'
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="$PROJECT_DIR/src"
 APP_NAME="VibeProxyPlus"
-BUNDLE_ID="com.vibeproxyplus.app"
+BUNDLE_ID="com.github.drjacky"
 BUILD_DIR="$SRC_DIR/.build/release"
 APP_DIR="$PROJECT_DIR/$APP_NAME.app"
 
@@ -125,7 +125,7 @@ echo -e "${BLUE}Setting version to: ${VERSION} (build ${BUILD_NUMBER})${NC}"
 # Update SUFeedURL based on architecture (for Sparkle auto-updates)
 TARGET_ARCH="${TARGET_ARCH:-arm64}"
 if [ "$TARGET_ARCH" = "x86_64" ]; then
-    APPCAST_URL="https://raw.githubusercontent.com/automazeio/vibeproxy/main/appcast-x86_64.xml"
+    APPCAST_URL="https://raw.githubusercontent.com/Drjacky/vibeproxyplus/main/appcast-x86_64.xml"
     echo -e "${BLUE}Setting Sparkle feed URL for Intel: ${APPCAST_URL}${NC}"
     /usr/libexec/PlistBuddy -c "Set :SUFeedURL ${APPCAST_URL}" "$APP_DIR/Contents/Info.plist"
 fi

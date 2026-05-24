@@ -46,7 +46,7 @@ final class CursorTokenImporter {
     init(
         fileManager: FileManager = .default,
         authDirectoryURL: URL? = nil,
-        queue: DispatchQueue = DispatchQueue(label: "io.automaze.vibeproxy.cursor-importer", qos: .userInitiated)
+        queue: DispatchQueue = DispatchQueue(label: "com.github.drjacky.cursor-importer", qos: .userInitiated)
     ) {
         self.fileManager = fileManager
         self.authDirectoryURL = authDirectoryURL

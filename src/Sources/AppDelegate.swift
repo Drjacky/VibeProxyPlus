@@ -372,7 +372,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         content.sound = .default
         
         let request = UNNotificationRequest(
-            identifier: "io.automaze.vibeproxy.\(UUID().uuidString)",
+            identifier: "com.github.drjacky.\(UUID().uuidString)",
             content: content,
             trigger: nil
         )
