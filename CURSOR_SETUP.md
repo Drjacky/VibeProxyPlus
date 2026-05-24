@@ -51,7 +51,7 @@ Configure the tool's OpenAI-compatible provider to use `http://localhost:8317/v1
 | Fetch Auth Locally fails         | Open Cursor IDE, sign in, quit and reopen VibeProxy, try again                          |
 | No Cursor models in `/v1/models` | Confirm `cursor.json` exists in `~/.cli-proxy-api/`, provider enabled, server restarted |
 | 401 from proxy                   | Re-fetch tokens or use Add Account                                                      |
-| Want upstream VibeProxy releases | This doc is for the **Drjacky** fork; see [FORK.md](FORK.md)                            |
+| Want upstream VibeProxy releases | This doc is for the **Drjacky** fork; see [README.md](README.md#maintaining-this-fork)   |
 
 ## Security
 

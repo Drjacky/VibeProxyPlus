@@ -29,7 +29,7 @@ These releases are **not** notarized and use **ad-hoc** code signing. macOS may 
 
 Or: **System Settings** → **Privacy & Security** → **Open Anyway** after a blocked attempt.
 
-After that, you can launch normally. See [FORK.md](FORK.md#github-releases-unsigned).
+After that, you can launch normally. See [README.md](README.md#github-releases-and-ci).
 
 ---
 

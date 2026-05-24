@@ -11,7 +11,7 @@
 
 Native macOS menu bar app that routes your existing AI subscriptions through a local OpenAI-compatible proxy (`http://localhost:8317`).
 
-**This repo:** [Drjacky/vibeproxy](https://github.com/Drjacky/vibeproxy) - maintained fork with **Cursor provider** support and [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) bundled. Based on [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy); see [FORK.md](FORK.md) for upstream sync notes.
+**This repo:** [Drjacky/vibeproxy](https://github.com/Drjacky/vibeproxy) - personal fork of [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) with **Cursor provider** support and [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) bundled. Pre-built apps are published on [this repo's Releases](https://github.com/Drjacky/vibeproxy/releases).
 
 ---
 
@@ -39,7 +39,7 @@ Use subscriptions with tools such as [Factory Droids](https://app.factory.ai/r/F
 
 ### Setup guides
 
-- [Cursor provider (fork)](CURSOR_SETUP.md)
+- [Cursor provider](CURSOR_SETUP.md)
 - [Factory CLI](FACTORY_SETUP.md)
 - [Amp CLI](AMPCODE_SETUP.md)
 
@@ -64,17 +64,17 @@ Use subscriptions with tools such as [Factory Droids](https://app.factory.ai/r/F
 
 ### Download from GitHub Releases (recommended)
 
-Pre-built binaries for this fork are published here:
-
 **https://github.com/Drjacky/vibeproxy/releases**
 
-> **Signing.** CI names assets clearly: `VibeProxy-arm64-unsigned.zip` (ad-hoc) or `VibeProxy-arm64-signed.zip` if you configure Apple signing secrets. Unsigned builds need **right-click → Open** the first time.
+> **Signing.** Filenames indicate type: `VibeProxy-arm64-unsigned.zip` (ad-hoc) or `VibeProxy-arm64-signed.zip` if Apple signing secrets are set in the repo. Unsigned builds need **right-click → Open** the first time.
 
-1. Download the ZIP for your Mac from the latest release (e.g. `VibeProxy-arm64-unsigned.zip` on Apple Silicon).
+1. Download the ZIP for your Mac from the latest release.
 2. Extract and move `VibeProxy.app` to **Applications**.
 3. **Right-click** the app → **Open** → confirm **Open**.
 
-Verify checksums when provided: `shasum -a 256 -c VibeProxy-arm64-unsigned.zip.sha256`
+Verify checksums: `shasum -a 256 -c VibeProxy-arm64-unsigned.zip.sha256`
+
+More detail: [INSTALLATION.md](INSTALLATION.md)
 
 ### Build from source
 
@@ -90,29 +90,12 @@ make app
 open VibeProxy.app
 ```
 
-Same unsigned/ad-hoc behavior as CI builds. See [INSTALLATION.md](INSTALLATION.md) and [FORK.md](FORK.md#github-releases-unsigned).
-
-### Automatic releases (maintainers)
-
-Set repo secret **`AUTO_UPDATE_TOKEN`** (PAT) — see [FORK.md](FORK.md#automatic-pipeline-requires-auto_update_token). Then:
-
-`update-cliproxyapi` → bump PR → `auto-release` merges and tags → `release` publishes ZIPs to [Releases](https://github.com/Drjacky/vibeproxy/releases).
-
-### Manual tag (optional)
-
-```bash
-git tag v1.0.0-cursor.1
-git push origin v1.0.0-cursor.1
-```
-
-Triggers [.github/workflows/release.yml](.github/workflows/release.yml) only.
-
 ---
 
 ## Quick start
 
 1. Launch **VibeProxy** and open **Settings** from the menu bar.
-2. Enable providers you need (including **Cursor** for this fork).
+2. Enable providers you need (including **Cursor**).
 3. Authenticate:
    - **Connect** / **Add Account** for OAuth providers
    - **Fetch Auth Locally** or **Add Account** for Cursor ([CURSOR_SETUP.md](CURSOR_SETUP.md))
@@ -128,22 +111,14 @@ Triggers [.github/workflows/release.yml](.github/workflows/release.yml) only.
 vibeproxy/
 ├── src/
 │   ├── Sources/
-│   │   ├── AppDelegate.swift
-│   │   ├── ServerManager.swift
-│   │   ├── SettingsView.swift
-│   │   ├── CursorTokenImporter.swift   # fork: Cursor local auth
+│   │   ├── CursorTokenImporter.swift
 │   │   ├── CursorJWTHelper.swift
 │   │   ├── ForkConfig.swift
-│   │   └── Resources/
-│   │       ├── cli-proxy-api-plus
-│   │       ├── config.yaml
-│   │       └── AppIcon.icns
-│   ├── Tests/
+│   │   └── Resources/cli-proxy-api-plus
 │   └── Package.swift
 ├── create-app-bundle.sh
 ├── Makefile
-├── CURSOR_SETUP.md
-└── FORK.md
+└── CURSOR_SETUP.md
 ```
 
 ### Commands
@@ -165,6 +140,128 @@ cd src && swift test
 
 ---
 
+## Maintaining this fork
+
+This fork is not intended to replace upstream. Cursor and release automation live here; many docs and Sparkle feeds still align with [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) for easier merges.
+
+### What to keep aligned with upstream
+
+| Area | Why |
+|------|-----|
+| `CHANGELOG.md` | Release history from upstream lineage |
+| `appcast.xml`, `appcast-x86_64.xml` | Sparkle feeds (still point at upstream unless you change them) |
+| `FACTORY_SETUP.md` | Factory setup for official-style releases |
+| `.github/workflows/update-cliproxyapi.yml` | CLIProxyAPIPlus bump automation |
+| `src/Info.plist` (`SUFeedURL`) | In-app auto-update (upstream feed by default) |
+
+### What is fork-specific
+
+| Area | Why |
+|------|-----|
+| [`ForkConfig.swift`](src/Sources/ForkConfig.swift) | Fork URLs in the app UI |
+| `SettingsView` "Report an issue" | Points at **this repo's** issues |
+| `README.md`, `INSTALLATION.md`, `CURSOR_SETUP.md` | This fork's install and Cursor docs |
+| `.github/workflows/release.yml` | Builds `*-unsigned` / `*-signed` assets on **Drjacky/vibeproxy** Releases |
+| Cursor Swift sources | `CursorTokenImporter`, `CursorJWTHelper`, provider UI |
+
+**Downloads:** Use [Drjacky/vibeproxy Releases](https://github.com/Drjacky/vibeproxy/releases). Sparkle inside the app may still check upstream until you change `SUFeedURL` in `src/Info.plist`.
+
+### Bundled backend (CLIProxyAPIPlus)
+
+`src/Sources/Resources/cli-proxy-api-plus` comes from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) (Cursor provider, `-cursor-login`). CI downloads the same binaries on release and on scheduled bumps.
+
+### Git LFS setup
+
+The binary is ~50MB and tracked with **Git LFS** (see `.gitattributes`).
+
+**One-time on your Mac:**
+
+```bash
+brew install git-lfs
+git lfs install
+```
+
+**Clone:**
+
+```bash
+git clone git@github.com:Drjacky/vibeproxy.git
+cd vibeproxy
+git lfs pull
+```
+
+**Commit an updated binary:**
+
+```bash
+git lfs install
+git add src/Sources/Resources/cli-proxy-api-plus
+git commit -m "Update cli-proxy-api-plus via LFS"
+git push
+```
+
+Without `git lfs`, `git add` may store the full file in git (GitHub will warn). Older commits from upstream may still contain the binary as a normal object; only new fork commits use LFS.
+
+### Syncing with upstream
+
+```bash
+git remote add upstream https://github.com/automazeio/vibeproxy.git   # once
+git fetch upstream
+git merge upstream/main
+```
+
+After each sync:
+
+1. Resolve conflicts; prefer **upstream** for files in the table above.
+2. Keep fork-specific pieces (`ForkConfig.swift`, Cursor code, `release.yml`, this README's fork sections).
+3. Confirm "Report an issue" still points at this repo.
+4. Re-run `cd src && swift test` and `make app` if provider code changed.
+
+---
+
+## GitHub Releases and CI
+
+Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml) — **Build and Release**
+
+| Trigger | Result |
+|---------|--------|
+| Push tag `v*` | Builds arm64 (+ x86_64 if asset exists), uploads `*-unsigned.zip` / `*-signed.zip` (+ DMG, `.sha256`) to **this repo's Releases** |
+| `workflow_dispatch` | Builds artifacts only (no Release unless you also push a tag) |
+
+Asset names:
+
+- `VibeProxy-arm64-unsigned.zip` - ad-hoc (default without Apple signing secrets)
+- `VibeProxy-arm64-signed.zip` - Apple Developer ID when signing secrets are configured
+
+Release notes explain unsigned vs signed and **right-click → Open** for unsigned builds.
+
+Optional later: notarization, Sparkle on this repo (`SUFeedURL`, `appcast.xml`, `SPARKLE_PRIVATE_KEY`).
+
+### Automatic release pipeline
+
+Requires repo secret **`AUTO_UPDATE_TOKEN`** (PAT). `GITHUB_TOKEN` cannot push tags that trigger other workflows.
+
+1. **`update-cliproxyapi.yml`** (every 12h) - bumps CLIProxyAPIPlus, opens `bump-cliproxyapi-*` PR, triggers auto-release.
+2. **`auto-release.yml`** - merges that PR, bumps patch in `CHANGELOG.md`, pushes tag `v*`.
+3. **`release.yml`** - tag push publishes Release assets.
+
+**Create the secret (one-time):**
+
+1. GitHub → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+2. Name: `AUTO_UPDATE_TOKEN`
+3. Value: classic PAT (`repo` + `workflow`) or fine-grained token with **Contents**, **Pull requests**, **Actions**, and **Workflows** read/write.
+
+### Manual tag
+
+```bash
+git tag v1.0.0-cursor.1
+git push origin v1.0.0-cursor.1
+```
+
+Triggers `release.yml` only (no bump PR merge).
+
+Optional Apple signing secrets for `*-signed*` artifacts: `APPLE_DEVELOPER_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_CERTIFICATE_PASSWORD`, `APPLE_DEVELOPER_ID_APPLICATION`.
+
+---
+
 ## Credits
 
 - [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy) - original macOS app and UI
@@ -178,5 +275,5 @@ MIT - see [LICENSE](LICENSE).
 
 ## Support
 
-- **Issues (this fork):** https://github.com/Drjacky/vibeproxy/issues
+- **Issues:** https://github.com/Drjacky/vibeproxy/issues
 - **Repository:** https://github.com/Drjacky/vibeproxy

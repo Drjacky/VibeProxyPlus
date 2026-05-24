@@ -1,7 +1,7 @@
 import Foundation
 
 /// Fork-specific URLs. Upstream sync should not overwrite this file.
-/// See FORK.md at the repository root.
+/// See README.md (Maintaining this fork) at the repository root.
 enum ForkConfig {
     static let upstreamOwner = "automazeio"
     static let upstreamRepo = "vibeproxy"
