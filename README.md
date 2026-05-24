@@ -77,7 +77,7 @@ open VibeProxyPlus.app
 
 Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first).
 
-Regenerate the menu bar icon with a **+** badge: `make icon`
+Regenerate `AppIcon.icns` after editing `icon.png`: `make icon` (optional `make icon BADGE=1` to overlay a **+** badge first)
 
 ---
 
@@ -105,6 +105,7 @@ vibeproxyplus/
 │   │   └── Resources/cli-proxy-api-plus.version
 │   └── Package.swift
 ├── scripts/fetch-cliproxy-plus.sh
+├── scripts/generate-app-icon.sh
 ├── scripts/badge-app-icon.swift
 ├── create-app-bundle.sh
 └── Makefile
@@ -113,7 +114,7 @@ vibeproxyplus/
 ### Commands
 
 ```bash
-make icon     # Add + badge to icon.png and refresh AppIcon.icns
+make icon     # Build AppIcon.icns from icon.png (BADGE=1 to add + overlay first)
 make app      # Build VibeProxyPlus.app
 make run      # Build and open
 make install  # Copy to /Applications

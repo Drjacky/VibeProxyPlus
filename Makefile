@@ -1,14 +1,8 @@
 .PHONY: build app install clean run help fetch-cliproxy icon
 
-icon: ## Add + badge to icon.png and regenerate AppIcon.icns
-	@chmod +x scripts/badge-app-icon.swift
-	@swift scripts/badge-app-icon.swift icon.png icon.png
-	@ICONSET=src/Sources/Resources/AppIcon.iconset; rm -rf $$ICONSET; mkdir -p $$ICONSET; \
-	for size in 16 32 128 256 512; do \
-	  sips -z $$size $$size icon.png --out "$$ICONSET/icon_$${size}x$${size}.png" >/dev/null; \
-	  sips -z $$((size*2)) $$((size*2)) icon.png --out "$$ICONSET/icon_$${size}x$${size}@2x.png" >/dev/null; \
-	done; \
-	iconutil -c icns -o src/Sources/Resources/AppIcon.icns $$ICONSET
+icon: ## Regenerate AppIcon.icns from icon.png (use: make icon BADGE=1 to add + badge first)
+	@chmod +x scripts/generate-app-icon.sh scripts/badge-app-icon.swift
+	@if [ "$(BADGE)" = "1" ]; then ./scripts/generate-app-icon.sh --badge icon.png; else ./scripts/generate-app-icon.sh icon.png; fi
 
 help: ## Show this help message
 	@echo "VibeProxyPlus - macOS Menu Bar App"
@@ -49,8 +43,6 @@ clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
 	@rm -rf src/.build
 	@rm -rf "VibeProxyPlus.app"
-	@rm -rf src/Sources/Resources/cli-proxy-api
-	@rm -rf src/Sources/Resources/config.yaml
 	@rm -rf src/Sources/Resources/static
 	@echo "✅ Clean complete"
 
