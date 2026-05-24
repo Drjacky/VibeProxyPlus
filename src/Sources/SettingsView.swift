@@ -809,7 +809,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                Link("Report an issue", destination: URL(string: "https://github.com/automazeio/vibeproxy/issues")!)
+                Link("Report an issue", destination: ForkConfig.forkIssuesURL)
                     .font(.caption)
                     .padding(.top, 6)
                     .onHover { inside in

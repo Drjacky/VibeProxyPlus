@@ -1,5 +1,7 @@
 # VibeProxy
 
+> **Fork:** [Drjacky/vibeproxy](https://github.com/Drjacky/vibeproxy) is a personal fork of [automazeio/vibeproxy](https://github.com/automazeio/vibeproxy). Official releases, Sparkle updates, and most docs refer to **upstream**. Fork-only behavior (e.g. Cursor provider) is tracked in this repo; see [FORK.md](FORK.md) for sync notes.
+
 <p align="center">
   <img src="icon.png" width="128" height="128" alt="VibeProxy Icon">
 </p>
@@ -8,7 +10,8 @@
 <a href="https://automaze.io" rel="nofollow"><img alt="Automaze" src="https://img.shields.io/badge/By-automaze.io-4b3baf" style="max-width: 100%;"></a>
 <a href="https://github.com/automazeio/vibeproxy/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
 <a href="http://x.com/intent/follow?screen_name=aroussi" rel="nofollow"><img alt="Follow on 𝕏" src="https://img.shields.io/badge/Follow-%F0%9D%95%8F/@aroussi-1c9bf0" style="max-width: 100%;"></a>
-<a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
+<a href="https://github.com/automazeio/vibeproxy"><img alt="Star upstream" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20upstream&amp;maxAge=60" style="max-width: 100%;"></a>
+<a href="https://github.com/Drjacky/vibeproxy"><img alt="Fork" src="https://img.shields.io/badge/Fork-Drjacky%2Fvibeproxy-4b3baf" style="max-width: 100%;"></a></p>
 </p>
 
 **Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code, ChatGPT, **Gemini**, **Kimi**, **Qwen**, **Antigravity**, and **Z.AI GLM** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)**.
