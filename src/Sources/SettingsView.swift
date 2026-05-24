@@ -626,7 +626,7 @@ struct SettingsView: View {
                         onConnect: { connectService(.claude) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("claude", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("claude", enabled: enabled) }
                     ) {
                         VercelGatewayControls(serverManager: serverManager)
                     }
@@ -646,7 +646,7 @@ struct SettingsView: View {
                         onConnect: { connectService(.codex) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("codex", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("codex", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -664,7 +664,7 @@ struct SettingsView: View {
                         onConnect: { connectService(.gemini) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("gemini", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("gemini", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -682,7 +682,7 @@ struct SettingsView: View {
                         onConnect: { connectService(.kimi) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("kimi", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("kimi", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -700,7 +700,7 @@ struct SettingsView: View {
                         onConnect: { connectService(.copilot) },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("github-copilot", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("github-copilot", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -720,7 +720,7 @@ struct SettingsView: View {
                         isFetchingAuthLocally: fetchingCursorAuthLocally,
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("cursor", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("cursor", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -738,7 +738,7 @@ struct SettingsView: View {
                         onConnect: { showingQwenEmailPrompt = true },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("qwen", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("qwen", enabled: enabled) }
                     ) { EmptyView() }
 
                     ServiceRow(
@@ -756,7 +756,7 @@ struct SettingsView: View {
                         onConnect: { showingZaiApiKeyPrompt = true },
                         onDisconnect: { account in disconnectAccount(account) },
                         onToggleDisabled: { account in toggleAccountDisabled(account) },
-                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("zai", enabled: enabled) },
+                        onToggleEnabled: { enabled in serverManager.setProviderEnabled("zai", enabled: enabled) }
                     ) { EmptyView() }
                 }
                 
@@ -780,7 +780,7 @@ struct SettingsView: View {
                                 },
                                 onToggleEnabled: { enabled in
                                     serverManager.setProviderEnabled(provider.id, enabled: enabled)
-                                },
+                                }
                             )
                         }
                     }
