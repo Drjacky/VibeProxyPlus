@@ -127,7 +127,7 @@ jobs:
           # Add version link at the bottom (before first existing link)
           REPO="${{ github.repository }}"
           LINK_LINE="[${NEW_VERSION}]: https://github.com/${REPO}/releases/tag/v${NEW_VERSION}"
-          sed -i.bak "0,/^\[.*\]: https:\\/\\/github.com\\/.*\\/releases\\/tag\\/v/s||${LINK_LINE}\n&|" CHANGELOG.md
+          sed -i.bak "0,/^\[.*\]: https:\\/\\/github.com\\/Drjacky\\/vibeproxyplus\\/releases\\/tag\\/v/s||${LINK_LINE}\n&|" CHANGELOG.md
           rm -f CHANGELOG.md.bak
           
           echo "CHANGELOG.md updated"

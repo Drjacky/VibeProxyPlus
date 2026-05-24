@@ -15,7 +15,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.5.0</string>
+    <string>1.0.0</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleVersion</key>
@@ -35,8 +35,6 @@
     <key>SUAutomaticallyUpdate</key>
     <false/>
     <key>SUEnableAutomaticChecks</key>
-    <true/>
-    <key>SUPublicEDKey</key>
-    <string>WPYQNlG8Z9CI+OBiPa4bph6Dz01vdPRGZhilQGA/rQw=</string>
+    <false/>
 </dict>
 </plist>

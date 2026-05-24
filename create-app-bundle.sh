@@ -122,13 +122,17 @@ echo -e "${BLUE}Setting version to: ${VERSION} (build ${BUILD_NUMBER})${NC}"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "$APP_DIR/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER}" "$APP_DIR/Contents/Info.plist"
 
-# Update SUFeedURL based on architecture (for Sparkle auto-updates)
+# Sparkle feed URL (arm64 default in Info.plist; Intel override)
+GITHUB_OWNER="${GITHUB_OWNER:-Drjacky}"
+GITHUB_REPO="${GITHUB_REPO:-vibeproxyplus}"
 TARGET_ARCH="${TARGET_ARCH:-arm64}"
 if [ "$TARGET_ARCH" = "x86_64" ]; then
-    APPCAST_URL="https://raw.githubusercontent.com/Drjacky/vibeproxyplus/main/appcast-x86_64.xml"
-    echo -e "${BLUE}Setting Sparkle feed URL for Intel: ${APPCAST_URL}${NC}"
-    /usr/libexec/PlistBuddy -c "Set :SUFeedURL ${APPCAST_URL}" "$APP_DIR/Contents/Info.plist"
+    APPCAST_URL="https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/appcast-x86_64.xml"
+else
+    APPCAST_URL="https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/appcast.xml"
 fi
+echo -e "${BLUE}Setting Sparkle feed URL: ${APPCAST_URL}${NC}"
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL ${APPCAST_URL}" "$APP_DIR/Contents/Info.plist"
 
 # Create PkgInfo
 echo -e "${BLUE}Creating PkgInfo...${NC}"
