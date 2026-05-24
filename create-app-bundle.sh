@@ -56,8 +56,9 @@ if [ -d "$SRC_DIR/Sources/Resources" ]; then
     # Use a loop to copy each item to avoid nested Resources folder
     for item in "$SRC_DIR/Sources/Resources/"*; do
         if [ -e "$item" ]; then
-            # Skip if it's a Swift file or Package.swift
-            if [[ "$item" != *.swift ]]; then
+            # Skip Swift sources, iconset dev folder (only AppIcon.icns belongs in the bundle)
+            base="$(basename "$item")"
+            if [[ "$item" != *.swift && "$base" != "AppIcon.iconset" ]]; then
                 cp -r "$item" "$APP_DIR/Contents/Resources/"
             fi
         fi
