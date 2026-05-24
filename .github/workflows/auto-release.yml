@@ -21,7 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true
           token: ${{ secrets.AUTO_UPDATE_TOKEN }}
           fetch-depth: 0
 
@@ -75,7 +74,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          lfs: true
           token: ${{ secrets.AUTO_UPDATE_TOKEN }}
           fetch-depth: 0
 

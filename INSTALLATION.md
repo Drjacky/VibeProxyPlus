@@ -44,14 +44,12 @@ After that, you can launch normally. See [README.md](README.md#github-releases-a
 
 ### Build Instructions
 
-1. **Clone this fork and fetch LFS binary**
+1. **Clone this fork**
    ```bash
-   brew install git-lfs
-   git lfs install
    git clone https://github.com/Drjacky/vibeproxy.git
    cd vibeproxy
-   git lfs pull
    ```
+   The CLI binary is downloaded on first `make app` (not stored in git; public forks cannot push LFS).
 
 2. **Build the app**
    ```bash

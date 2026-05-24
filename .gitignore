@@ -31,6 +31,9 @@ src/Sources/Resources/static/
 # Icon generation artifacts
 src/Sources/Resources/AppIcon.iconset/
 
+# Bundled backend (~50MB) — fetched by scripts/fetch-cliproxy-plus.sh (not in git; public forks cannot use LFS)
+src/Sources/Resources/cli-proxy-api-plus
+
 # Local CLIProxyAPIPlus download scratch dir
 .tmp-cliproxy-download/
 

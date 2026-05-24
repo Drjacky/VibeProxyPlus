@@ -16,7 +16,11 @@ release: ## Build the Swift executable (release)
 	@./build.sh
 	@echo "✅ Build complete: src/.build/release/CLIProxyMenuBar"
 
-app: ## Create the .app bundle
+fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
+	@chmod +x scripts/fetch-cliproxy-plus.sh
+	@./scripts/fetch-cliproxy-plus.sh
+
+app: fetch-cliproxy ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
 	@./create-app-bundle.sh
 	@echo "✅ App bundle created: VibeProxy.app"

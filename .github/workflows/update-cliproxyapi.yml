@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Close old unmerged bump PRs
         env:
@@ -98,6 +96,9 @@ jobs:
           URL="${{ steps.get-latest-release.outputs.darwin_asset_url }}"
           TARGET_DIR="src/Sources/Resources"
           TARGET_FILE="$TARGET_DIR/cli-proxy-api-plus"
+          VERSION_FILE="$TARGET_DIR/cli-proxy-api-plus.version"
+          VERSION="${{ steps.get-latest-release.outputs.version }}"
+          LATEST_TAG="${{ steps.get-latest-release.outputs.latest_tag }}"
           
           # Create a temporary directory for extraction
           TEMP_DIR=$(mktemp -d)
@@ -151,53 +152,29 @@ jobs:
           echo "Creating target directory..."
           mkdir -p "$TARGET_DIR"
           
-          echo "Copying $EXTRACTED_FILE to $TARGET_FILE"
-          cp "$TEMP_DIR/$EXTRACTED_FILE" "$TARGET_FILE"
-          
-          if [ ! -f "$TARGET_FILE" ]; then
-             echo "Error: Failed to copy file to $TARGET_FILE" >&2
-             exit 1
-          fi
-          
-          if [ ! -s "$TARGET_FILE" ]; then
-             echo "Error: Target file is empty" >&2
-             exit 1
-          fi
+          VERIFY_FILE="$TEMP_DIR/cli-proxy-api-plus"
+          echo "Copying $EXTRACTED_FILE to $VERIFY_FILE for verification"
+          cp "$TEMP_DIR/$EXTRACTED_FILE" "$VERIFY_FILE"
+          chmod +x "$VERIFY_FILE"
 
-          chmod +x "$TARGET_FILE"
-          
-          echo "Verifying binary (basic checks)..."
-          # Can't execute macOS ARM64 binary on Linux runner, so just verify:
-          # 1. File exists and is not empty
-          # 2. File size is reasonable (> 1MB for a Go binary)
-          FILE_SIZE=$(stat -c%s "$TARGET_FILE" 2>/dev/null || stat -f%z "$TARGET_FILE" 2>/dev/null)
+          FILE_SIZE=$(stat -c%s "$VERIFY_FILE" 2>/dev/null || stat -f%z "$VERIFY_FILE" 2>/dev/null)
           if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" -lt 1048576 ]; then
              echo "Error: Binary file is too small (${FILE_SIZE:-0} bytes)" >&2
              exit 1
           fi
-          
-          # Check file type (should be a Mach-O executable for darwin)
+
           if command -v file >/dev/null 2>&1; then
-            FILE_TYPE=$(file "$TARGET_FILE")
+            FILE_TYPE=$(file "$VERIFY_FILE")
             echo "File type: $FILE_TYPE"
             if ! echo "$FILE_TYPE" | grep -q -E "(Mach-O|executable)"; then
               echo "Warning: File type doesn't look like a binary executable" >&2
             fi
           fi
-          
+
           echo "✓ Binary verification passed (${FILE_SIZE} bytes)"
-          
-          # Verify git status shows only the binary was modified
-          echo "Git status:"
-          git status --porcelain
-          
-          # Ensure only the binary file is changed
-          CHANGED_FILES=$(git status --porcelain | grep -v "^ M src/Sources/Resources/cli-proxy-api-plus$" || true)
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "Error: Unexpected files were modified:" >&2
-            echo "$CHANGED_FILES" >&2
-            exit 1
-          fi
+
+          echo "$VERSION" > "$VERSION_FILE"
+          echo "Recorded version ${VERSION} (${LATEST_TAG}) in $VERSION_FILE"
 
       - name: Create Pull Request
         id: create-pr

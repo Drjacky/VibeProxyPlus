@@ -79,16 +79,13 @@ More detail: [INSTALLATION.md](INSTALLATION.md)
 ### Build from source
 
 ```bash
-brew install git-lfs
-git lfs install
-
 git clone https://github.com/Drjacky/vibeproxy.git
 cd vibeproxy
-git lfs pull
-
-make app
+make app    # downloads cli-proxy-api-plus automatically
 open VibeProxy.app
 ```
+
+Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first).
 
 ---
 
@@ -114,8 +111,9 @@ vibeproxy/
 │   │   ├── CursorTokenImporter.swift
 │   │   ├── CursorJWTHelper.swift
 │   │   ├── ForkConfig.swift
-│   │   └── Resources/cli-proxy-api-plus
+│   │   └── Resources/cli-proxy-api-plus.version
 │   └── Package.swift
+├── scripts/fetch-cliproxy-plus.sh
 ├── create-app-bundle.sh
 ├── Makefile
 └── CURSOR_SETUP.md
@@ -168,37 +166,22 @@ This fork is not intended to replace upstream. Cursor and release automation liv
 
 ### Bundled backend (CLIProxyAPIPlus)
 
-`src/Sources/Resources/cli-proxy-api-plus` comes from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) (Cursor provider, `-cursor-login`). CI downloads the same binaries on release and on scheduled bumps.
+The ~50MB binary is **not stored in git** on this fork. GitHub blocks **new LFS uploads on public forks** (`can not upload new objects to public fork`).
 
-### Git LFS setup
+Instead:
 
-The binary is ~50MB and tracked with **Git LFS** (see `.gitattributes`).
+- `src/Sources/Resources/cli-proxy-api-plus.version` — pinned version (committed)
+- `scripts/fetch-cliproxy-plus.sh` — downloads the binary locally (gitignored)
+- CI (`release.yml`, `update-cliproxyapi.yml`) — downloads from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) releases
 
-**One-time on your Mac:**
-
-```bash
-brew install git-lfs
-git lfs install
-```
-
-**Clone:**
+Bump PRs only update the `.version` file; release builds fetch the binary on the runner.
 
 ```bash
-git clone git@github.com:Drjacky/vibeproxy.git
-cd vibeproxy
-git lfs pull
+./scripts/fetch-cliproxy-plus.sh
+# or: make fetch-cliproxy
 ```
 
-**Commit an updated binary:**
-
-```bash
-git lfs install
-git add src/Sources/Resources/cli-proxy-api-plus
-git commit -m "Update cli-proxy-api-plus via LFS"
-git push
-```
-
-Without `git lfs`, `git add` may store the full file in git (GitHub will warn). Older commits from upstream may still contain the binary as a normal object; only new fork commits use LFS.
+Alternative: [detach the fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/detaching-a-fork) on GitHub if you want to use Git LFS on the repo again.
 
 ### Syncing with upstream
 
