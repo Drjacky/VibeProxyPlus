@@ -797,6 +797,16 @@ struct SettingsView: View {
                     Text("VibeProxyPlus \(appVersion) was made possible thanks to")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    Link("VibeProxy", destination: URL(string: "https://github.com/automazeio/vibeproxy")!)
+                        .font(.caption)
+                        .underline()
+                        .foregroundColor(.secondary)
+                        .onHover { inside in
+                            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                    Text("and")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     Link("CLIProxyAPIPlus", destination: URL(string: "https://github.com/kaitranntt/CLIProxyAPIPlus")!)
                         .font(.caption)
                         .underline()
