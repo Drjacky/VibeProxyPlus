@@ -1,17 +1,17 @@
 # Amp CLI Setup Guide
 
-This guide explains how to configure Amp CLI to work with VibeProxy, enabling you to use your existing subscriptions (Claude Max, ChatGPT Plus, Gemini) through Amp CLI.
+This guide explains how to configure Amp CLI to work with VibeProxyPlus, enabling you to use your existing subscriptions (Claude Max, ChatGPT Plus, Gemini) through Amp CLI.
 
 ## Overview
 
-VibeProxy integrates with Amp CLI by:
+VibeProxyPlus integrates with Amp CLI by:
 - Routing Amp login directly to ampcode.com (preserves OAuth cookies)
 - Routing model requests through CLIProxyAPI (uses your local subscriptions)
 - **No fallback** - you must authenticate the providers you want to use
 
 ## Prerequisites
 
-- VibeProxy installed and running
+- VibeProxyPlus installed and running
 - Amp CLI installed (`amp --version` to verify)
 - Active subscription (Claude Max, ChatGPT Plus, or Gemini)
 
@@ -26,22 +26,22 @@ echo '{"amp.url": "http://localhost:8317"}' > ~/.config/amp/settings.json
 
 ### 2. Authenticate Your Providers (Required)
 
-You must authenticate at least one provider to use Amp through VibeProxy:
+You must authenticate at least one provider to use Amp through VibeProxyPlus:
 
 ```bash
 # Claude (Anthropic) - uses your Claude Max/Pro subscription
-/Applications/VibeProxy.app/Contents/Resources/cli-proxy-api-plus \
-  -config /Applications/VibeProxy.app/Contents/Resources/config.yaml \
+/Applications/VibeProxyPlus.app/Contents/Resources/cli-proxy-api-plus \
+  -config /Applications/VibeProxyPlus.app/Contents/Resources/config.yaml \
   -claude-login
 
 # ChatGPT (OpenAI) - uses your ChatGPT Plus/Pro subscription
-/Applications/VibeProxy.app/Contents/Resources/cli-proxy-api-plus \
-  -config /Applications/VibeProxy.app/Contents/Resources/config.yaml \
+/Applications/VibeProxyPlus.app/Contents/Resources/cli-proxy-api-plus \
+  -config /Applications/VibeProxyPlus.app/Contents/Resources/config.yaml \
   -codex-login
 
 # Gemini (Google) - uses your Google AI subscription
-/Applications/VibeProxy.app/Contents/Resources/cli-proxy-api-plus \
-  -config /Applications/VibeProxy.app/Contents/Resources/config.yaml \
+/Applications/VibeProxyPlus.app/Contents/Resources/cli-proxy-api-plus \
+  -config /Applications/VibeProxyPlus.app/Contents/Resources/config.yaml \
   -login
 ```
 
@@ -55,9 +55,9 @@ amp login
 
 Your browser will open to ampcode.com for authentication.
 
-### 4. Restart VibeProxy
+### 4. Restart VibeProxyPlus
 
-Quit and relaunch VibeProxy from the menu bar.
+Quit and relaunch VibeProxyPlus from the menu bar.
 
 ### 5. Test
 
@@ -71,7 +71,7 @@ amp "Say hello"
 Amp CLI
   │
   ▼
-http://localhost:8317 (VibeProxy)
+http://localhost:8317 (VibeProxyPlus)
   │
   ├─► /auth/cli-login ──────────► https://ampcode.com (direct redirect)
   │
@@ -95,7 +95,7 @@ When logged into multiple providers (Claude, ChatGPT, Gemini, etc.), Amp may pic
 
 ### Enable/Disable Providers
 
-In VibeProxy Settings, each provider has a toggle switch:
+In VibeProxyPlus Settings, each provider has a toggle switch:
 - **Enabled** (default) - Provider's models are available to Amp
 - **Disabled** - Provider's models are excluded from Amp
 
@@ -124,7 +124,7 @@ You haven't authenticated the provider for the model you're trying to use.
 - For GPT models: `-codex-login`
 - For Gemini models: `-login`
 
-Then restart VibeProxy.
+Then restart VibeProxyPlus.
 
 ### OAuth token expired
 
@@ -135,14 +135,14 @@ Re-authenticate the provider:
 ls -la ~/.cli-proxy-api/*.json
 
 # Re-login (example for Claude)
-/Applications/VibeProxy.app/Contents/Resources/cli-proxy-api-plus \
-  -config /Applications/VibeProxy.app/Contents/Resources/config.yaml \
+/Applications/VibeProxyPlus.app/Contents/Resources/cli-proxy-api-plus \
+  -config /Applications/VibeProxyPlus.app/Contents/Resources/config.yaml \
   -claude-login
 ```
 
 ### Login fails in browser
 
-Make sure VibeProxy is running before attempting `amp login`.
+Make sure VibeProxyPlus is running before attempting `amp login`.
 
 ## Benefits
 

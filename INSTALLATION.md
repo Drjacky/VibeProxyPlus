@@ -47,7 +47,7 @@ After that, you can launch normally. See [README.md](README.md#github-releases-a
 1. **Clone this fork**
    ```bash
    git clone https://github.com/Drjacky/vibeproxyplus.git
-   cd vibeproxy
+   cd vibeproxyplus
    ```
    The CLI binary is downloaded on first `make app` (not stored in git; public forks cannot push LFS).
 

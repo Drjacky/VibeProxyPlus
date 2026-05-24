@@ -51,7 +51,7 @@ Configure the tool's OpenAI-compatible provider to use `http://localhost:8317/v1
 | Fetch Auth Locally fails         | Open Cursor IDE, sign in, quit and reopen VibeProxyPlus, try again                          |
 | No Cursor models in `/v1/models` | Confirm `cursor.json` exists in `~/.cli-proxy-api/`, provider enabled, server restarted |
 | 401 from proxy                   | Re-fetch tokens or use Add Account                                                      |
-| Want upstream VibeProxy (no Cursor) | See [VibeProxy releases](https://github.com/automazeio/vibeproxy/releases) |
+| Want upstream VibeProxyPlus (no Cursor) | See [VibeProxyPlus releases](https://github.com/automazeio/vibeproxyplus/releases) |
 
 ## Security
 

@@ -1,18 +1,18 @@
-# Using Factory AI with VibeProxy
+# Using Factory AI with VibeProxyPlus
 
-A simplified guide for using Factory CLI (Droid) with your personal Claude and ChatGPT subscriptions through VibeProxy.
+A simplified guide for using Factory CLI (Droid) with your personal Claude and ChatGPT subscriptions through VibeProxyPlus.
 
 ## What is This?
 
-This guide shows you how to use [Factory CLI](https://app.factory.ai/r/FM8BJHFQ) with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxy acts as a bridge that handles authentication and routing automatically.
+This guide shows you how to use [Factory CLI](https://app.factory.ai/r/FM8BJHFQ) with your personal Claude Code Pro/Max and ChatGPT Plus/Pro subscriptions instead of paying for separate API access. VibeProxyPlus acts as a bridge that handles authentication and routing automatically.
 
 **How it works:**
 
 ```
-Factory CLI  →  VibeProxy  →  [OAuth Authentication]  →  Claude / ChatGPT APIs
+Factory CLI  →  VibeProxyPlus  →  [OAuth Authentication]  →  Claude / ChatGPT APIs
 ```
 
-VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handles API format conversion — all automatically in the background.
+VibeProxyPlus manages OAuth tokens, auto-refreshes them, routes requests, and handles API format conversion — all automatically in the background.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handle
 - **Z.AI API key** for GLM model access (optional) - get one at [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list)
 - Factory CLI installed: `curl -fsSL https://app.factory.ai/cli | sh`
 
-## Step 1: Install VibeProxy
+## Step 1: Install VibeProxyPlus
 
 1. **Download [VibeProxyPlus.app](https://github.com/Drjacky/vibeproxyplus/releases)** from the releases page or build from source
 2. **Install**: Drag `VibeProxyPlus.app` to your `/Applications` folder
@@ -34,27 +34,27 @@ VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handle
 
 ## Step 2: Connect Your Accounts
 
-Once VibeProxy is running:
+Once VibeProxyPlus is running:
 
-1. Click the **VibeProxy menu bar icon**
+1. Click the **VibeProxyPlus menu bar icon**
 2. Select **"Open Settings"**
 3. Click **"Connect"** next to Claude Code
    - Your browser will open for authentication
    - Complete the login process
-   - VibeProxy will automatically detect when you're authenticated
+   - VibeProxyPlus will automatically detect when you're authenticated
 4. Click **"Connect"** next to Codex
    - Follow the same browser authentication process
-   - Wait for VibeProxy to confirm the connection
+   - Wait for VibeProxyPlus to confirm the connection
 5. **(Optional)** Click **"Connect"** next to Antigravity
    - Sign in with your Google account
    - Grant permissions for AI model access
    - This provides access to **Gemini 3.1 / 3 Pro** models
-   - VibeProxy will automatically save your credentials
+   - VibeProxyPlus will automatically save your credentials
 6. **(Optional)** Click **"Connect"** next to Gemini
    - Sign in with your Google account
    - Select a Google Cloud project (or accept the default)
    - This provides access to **Gemini 2.x** models
-   - VibeProxy will automatically save your credentials
+   - VibeProxyPlus will automatically save your credentials
 7. **(Optional)** Click **"Connect"** next to GitHub Copilot
    - Authenticate with your GitHub account
    - Requires an active GitHub Copilot subscription
@@ -62,7 +62,7 @@ Once VibeProxy is running:
 8. **(Optional)** Click **"Add Account"** next to Z.AI GLM
    - Enter your Z.AI API key (get one at [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list))
    - This provides access to **GLM-5**, **GLM-4.7**, and other GLM models
-   - VibeProxy will securely store your API key
+   - VibeProxyPlus will securely store your API key
 
 ✅ The server starts automatically and runs on port **8317**
 
@@ -366,7 +366,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
    - `gpt-5.5`, `gpt-5.4`, `gpt-5.3-codex`, etc.
    - `gemini-3.1-pro-preview`, `gemini-3.1-flash-image-preview`, `gemini-2.5-pro`, etc.
 
-3. **Start coding!** Factory will now route all requests through VibeProxy, which handles authentication automatically.
+3. **Start coding!** Factory will now route all requests through VibeProxyPlus, which handles authentication automatically.
 
 ## Available Models
 
@@ -382,7 +382,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 
 ### GitHub Copilot Models
 
-If you have a GitHub Copilot subscription, VibeProxy can route requests through GitHub's API, giving you access to many of the same models via a separate quota.
+If you have a GitHub Copilot subscription, VibeProxyPlus can route requests through GitHub's API, giving you access to many of the same models via a separate quota.
 
 **Key models:**
 - `claude-opus-4.6` - Claude Opus 4.6 (3x rate)
@@ -392,7 +392,7 @@ If you have a GitHub Copilot subscription, VibeProxy can route requests through 
 - `gemini-3.1-pro-preview` - Gemini 3.1 Pro (1x rate)
 
 > [!NOTE]
-> Copilot model names use **dot-notation** (`claude-opus-4.6`) while Claude Code subscription models use dash-notation (`claude-opus-4-7`). Both work through VibeProxy but route through different auth backends. Use `provider: "openai"` and `base_url` with `/v1` for Copilot models.
+> Copilot model names use **dot-notation** (`claude-opus-4.6`) while Claude Code subscription models use dash-notation (`claude-opus-4-7`). Both work through VibeProxyPlus but route through different auth backends. Use `provider: "openai"` and `base_url` with `/v1` for Copilot models.
 
 **Discovering new model names:** Run `copilot --help` and check the `--model` option for the current list of available models.
 
@@ -425,9 +425,9 @@ Antigravity provides access to Claude models with a generous usage quota (shared
 > **Gemini 3.1 / 3 Pro Configuration Requirements**:
 > - **Authentication**: Gemini 3.1 / 3 Pro models require **Antigravity** authentication (not Gemini CLI auth)
 > - **Provider Setting**: Must use `"provider": "openai"` in Factory config (Antigravity uses OpenAI API format)
-> - **Available in**: VibeProxy v1.0.9+ with CLIProxyAPI 6.5.1+
+> - **Available in**: VibeProxyPlus v1.0.9+ with CLIProxyAPI 6.5.1+
 > 
-> Connect to Antigravity in VibeProxy Settings → Click "Connect" next to Antigravity → Sign in with your Google account. After connecting, restart VibeProxy to activate Gemini 3.1 / 3 Pro access.
+> Connect to Antigravity in VibeProxyPlus Settings → Click "Connect" next to Antigravity → Sign in with your Google account. After connecting, restart VibeProxyPlus to activate Gemini 3.1 / 3 Pro access.
 
 ### Qwen Models
 - `qwen3-coder-plus` - Qwen3 Coder Plus (Most capable coding model)
@@ -441,7 +441,7 @@ Antigravity provides access to Claude models with a generous usage quota (shared
 - `glm-4-flash` - GLM-4-Flash (Fast and efficient)
 
 > [!NOTE]
-> Z.AI GLM models require an API key instead of OAuth authentication. Get your API key at [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list) and add it in VibeProxy Settings → Z.AI GLM → Add Account.
+> Z.AI GLM models require an API key instead of OAuth authentication. Get your API key at [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list) and add it in VibeProxyPlus Settings → Z.AI GLM → Add Account.
 
 ### OpenAI Models
 
@@ -465,11 +465,11 @@ Use parentheses syntax to control reasoning effort:
 
 This works with any supported GPT-5.x model: `gpt-5.5(high)`, `gpt-5.4(medium)`, `gpt-5.3-codex(high)`, etc.
 
-No manual CLIProxyAPI update is required—VibeProxy automatically keeps CLIProxyAPI up to date via our new auto-update workflow, so you can use new models immediately.
+No manual CLIProxyAPI update is required—VibeProxyPlus automatically keeps CLIProxyAPI up to date via our new auto-update workflow, so you can use new models immediately.
 
 ## Troubleshooting
 
-### VibeProxy Menu Bar Status
+### VibeProxyPlus Menu Bar Status
 - **Green dot**: Server is running
 - **Red dot**: Server is stopped
 - **Click the status** to toggle the server on/off
@@ -478,15 +478,15 @@ No manual CLIProxyAPI update is required—VibeProxy automatically keeps CLIProx
 
 | Problem | Solution |
 |---------|----------|
-| Can't connect to Claude/Codex/Gemini | Re-click "Connect" in VibeProxy settings |
-| Factory shows 404 errors | Make sure VibeProxy server is running (check menu bar) |
-| Authentication expired | Disconnect and reconnect the service in VibeProxy |
-| Port 8317 already in use | Quit any other instances of VibeProxy or CLIProxyAPI |
+| Can't connect to Claude/Codex/Gemini | Re-click "Connect" in VibeProxyPlus settings |
+| Factory shows 404 errors | Make sure VibeProxyPlus server is running (check menu bar) |
+| Authentication expired | Disconnect and reconnect the service in VibeProxyPlus |
+| Port 8317 already in use | Quit any other instances of VibeProxyPlus or CLIProxyAPI |
 | Gemini returns 401 errors | Verify your Google Cloud project has Gemini API enabled |
 
 ### Verification Checklist
 
-1. ✅ VibeProxy is running (menu bar icon shows green)
+1. ✅ VibeProxyPlus is running (menu bar icon shows green)
 2. ✅ Services (Claude, Codex, and optionally Gemini/Copilot) show as "Connected" in settings
 3. ✅ Factory CLI config has the custom models configured
 4. ✅ `droid` can select your custom models
@@ -495,7 +495,7 @@ No manual CLIProxyAPI update is required—VibeProxy automatically keeps CLIProx
 ## Extended Thinking Mode
 
 > [!NOTE]
-> The `-thinking-NUMBER` model naming convention is a **VibeProxy-specific implementation**, not an official Claude model name from Anthropic. VibeProxy intercepts these custom model names and translates them into proper API calls with the `thinking` parameter.
+> The `-thinking-NUMBER` model naming convention is a **VibeProxyPlus-specific implementation**, not an official Claude model name from Anthropic. VibeProxy intercepts these custom model names and translates them into proper API calls with the `thinking` parameter.
 
 VibeProxy automatically adds extended thinking support for Claude models! Simply append a thinking suffix to any Claude model name:
 

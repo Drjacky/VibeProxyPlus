@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to VibeProxy will be documented in this file.
+All notable changes to VibeProxyPlus will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -724,8 +724,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - **Intel Mac (x86_64) support** - Separate builds now available for Intel and Apple Silicon Macs
-  - Download `VibeProxy-x86_64.dmg` for Intel Macs
-  - Download `VibeProxy-arm64.dmg` for Apple Silicon (M1/M2/M3)
+  - Download `VibeProxyPlus-x86_64.dmg` for Intel Macs
+  - Download `VibeProxyPlus-arm64.dmg` for Apple Silicon (M1/M2/M3)
   - ⚠️ Intel build is untested - please report if it works!
 
 
@@ -1292,7 +1292,7 @@ This release is all about code improvements and standartization. No user-facing 
 ## [1.2.0] - 2025-11-22
 
 ### Added
-- **Amp CLI Integration** - Full support for Amp CLI through VibeProxy
+- **Amp CLI Integration** - Full support for Amp CLI through VibeProxyPlus
   - Smart path routing: `/auth/cli-login` → `/api/auth/cli-login` for authentication
   - Provider path rewriting: `/provider/*` → `/api/provider/*` for model requests
   - Management route forwarding to ampcode.com with Location header rewriting
@@ -1334,7 +1334,7 @@ This release is all about code improvements and standartization. No user-facing 
 ### Fixed
 - **Auto-Update Workflow** - Improved file filtering to prevent unwanted files from CLIProxyAPI releases
   - Now explicitly excludes: README.md, LICENSE, config.example.yaml, config.yaml, README_CN.md
-  - Prevents accidental overwriting of VibeProxy documentation files
+  - Prevents accidental overwriting of VibeProxyPlus documentation files
   - Added debug output to detect unexpected extracted files
 
 ### Note
@@ -1513,7 +1513,7 @@ This release is all about code improvements and standartization. No user-facing 
 
 ## [1.0.0] - 2025-10-05
 
-Initial release of VibeProxy - a native macOS menu bar application for managing CLIProxyAPI.
+Initial release of VibeProxyPlus - a native macOS menu bar application for managing CLIProxyAPI.
 
 ### Features
 

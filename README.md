@@ -11,7 +11,7 @@
 
 Native macOS menu bar app that routes your existing AI subscriptions through a local OpenAI-compatible proxy (`http://localhost:8317`).
 
-**VibeProxyPlus** is built on top of the open-source [VibeProxy](https://github.com/automazeio/vibeproxy) macOS UI and uses [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus), an excellent unified proxy server for AI services with support for third-party providers (including Cursor).
+**VibeProxyPlus** is built on top of the open-source [VibeProxyPlus](https://github.com/automazeio/vibeproxyplus) macOS UI and uses [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus), an excellent unified proxy server for AI services with support for third-party providers (including Cursor).
 
 Pre-built apps: **[Releases](https://github.com/Drjacky/vibeproxyplus/releases)**
 
@@ -24,7 +24,7 @@ Claude Code, Codex (ChatGPT), Gemini, Kimi, Qwen, Antigravity, Z.AI GLM (API key
 Use subscriptions with tools such as [Factory Droids](https://app.factory.ai/r/FM8BJHFQ), Amp, KiloCode, and any client that accepts a local OpenAI base URL.
 
 <p align="center">
-  <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxy-factory-video.webp" width="600" height="380" alt="VibeProxyPlus demo"></a>
+  <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxyplus-factory-video.webp" width="600" height="380" alt="VibeProxyPlus demo"></a>
 </p>
 
 ### Setup guides
@@ -125,14 +125,14 @@ cd src && swift test
 
 ## Maintaining this project
 
-VibeProxyPlus can optionally merge macOS UI changes from upstream [VibeProxy](https://github.com/automazeio/vibeproxy) while shipping **CLIProxyAPIPlus** from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus).
+VibeProxyPlus can optionally merge macOS UI changes from upstream [VibeProxyPlus](https://github.com/automazeio/vibeproxyplus) while shipping **CLIProxyAPIPlus** from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus).
 
 The ~50MB `cli-proxy-api-plus` binary is **not in git** (fetched at build time). See `scripts/fetch-cliproxy-plus.sh` and `cli-proxy-api-plus.version`.
 
-### Syncing with upstream VibeProxy
+### Syncing with upstream VibeProxyPlus
 
 ```bash
-git remote add upstream https://github.com/automazeio/vibeproxy.git   # once
+git remote add upstream https://github.com/automazeio/vibeproxyplus.git   # once
 git fetch upstream
 git merge upstream/main
 ```
@@ -161,7 +161,7 @@ git push origin v1.0.0-plus.1
 
 ## Credits
 
-- [VibeProxy](https://github.com/automazeio/vibeproxy) - original macOS menu bar app
+- [VibeProxyPlus](https://github.com/automazeio/vibeproxyplus) - original macOS menu bar app
 - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) - unified proxy server (Cursor and other providers)
 
 ---
