@@ -8,6 +8,10 @@ xcuserdata/
 *.xcworkspace
 *.xcodeproj
 
+# JetBrains IDEs (IntelliJ / AppCode / etc.)
+.idea/
+*.iml
+
 # App Bundle
 *.app
 *.zip

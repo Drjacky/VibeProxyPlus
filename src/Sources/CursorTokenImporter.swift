@@ -162,9 +162,7 @@ final class CursorTokenImporter {
             ?? (storage["cursorAuth/email"] as? String)
 
         let fingerprint = tokenFingerprint(accessToken: accessToken, refreshToken: refreshToken)
-        let targetFile = authDirectoryURL.appendingPathComponent(
-            CursorJWTHelper.credentialFileName(accessToken: accessToken)
-        )
+        let targetFile = resolveCredentialFileURL(accessToken: accessToken)
 
         if !force,
            let existing = try? Data(contentsOf: targetFile),
@@ -205,8 +203,113 @@ final class CursorTokenImporter {
             )
         }
 
+        removeDuplicateCursorCredentials(keeping: targetFile, accessToken: accessToken, refreshToken: refreshToken)
+
         NSLog("[CursorTokenImporter] Wrote %@", targetFile.lastPathComponent)
         return CursorTokenImportResult(fileURL: targetFile, email: email, skippedUnchanged: false)
+    }
+
+    // MARK: - Credential files
+
+    /// Prefer updating `cursor.json` when it already exists; otherwise match by JWT `sub` or create `cursor.json`.
+    func resolveCredentialFileURL(accessToken: String) -> URL {
+        let defaultURL = authDirectoryURL.appendingPathComponent("cursor.json")
+        if fileManager.fileExists(atPath: defaultURL.path) {
+            return defaultURL
+        }
+
+        let hashedURL = authDirectoryURL.appendingPathComponent(
+            CursorJWTHelper.credentialFileName(accessToken: accessToken)
+        )
+        if hashedURL != defaultURL, fileManager.fileExists(atPath: hashedURL.path) {
+            return hashedURL
+        }
+
+        if let sub = CursorJWTHelper.subject(accessToken), !sub.isEmpty {
+            for file in listCursorCredentialFiles() {
+                if credentialSub(in: file) == sub {
+                    return file
+                }
+            }
+        }
+
+        return defaultURL
+    }
+
+    private func removeDuplicateCursorCredentials(
+        keeping kept: URL,
+        accessToken: String,
+        refreshToken: String
+    ) {
+        let sub = CursorJWTHelper.subject(accessToken)
+        let fingerprint = tokenFingerprint(accessToken: accessToken, refreshToken: refreshToken)
+
+        for file in listCursorCredentialFiles() where file != kept {
+            let isDuplicate: Bool
+            if let sub, !sub.isEmpty, credentialSub(in: file) == sub {
+                isDuplicate = true
+            } else if credentialFingerprint(in: file) == fingerprint {
+                isDuplicate = true
+            } else {
+                isDuplicate = false
+            }
+
+            guard isDuplicate else { continue }
+
+            do {
+                try fileManager.removeItem(at: file)
+                NSLog("[CursorTokenImporter] Removed duplicate credential %@", file.lastPathComponent)
+            } catch {
+                NSLog(
+                    "[CursorTokenImporter] Failed to remove duplicate %@: %@",
+                    file.lastPathComponent,
+                    error.localizedDescription
+                )
+            }
+        }
+    }
+
+    private func listCursorCredentialFiles() -> [URL] {
+        guard let files = try? fileManager.contentsOfDirectory(
+            at: authDirectoryURL,
+            includingPropertiesForKeys: nil
+        ) else {
+            return []
+        }
+        return files.filter { url in
+            guard url.pathExtension == "json" else { return false }
+            let name = url.lastPathComponent
+            return name == "cursor.json" || (name.hasPrefix("cursor.") && name.hasSuffix(".json"))
+        }
+    }
+
+    private func credentialSub(in file: URL) -> String? {
+        guard let json = credentialJSON(at: file) else { return nil }
+        if let sub = json["sub"] as? String, !sub.isEmpty {
+            return sub
+        }
+        if let access = json["access_token"] as? String {
+            return CursorJWTHelper.subject(access)
+        }
+        return nil
+    }
+
+    private func credentialFingerprint(in file: URL) -> String? {
+        guard let json = credentialJSON(at: file),
+              let access = json["access_token"] as? String,
+              let refresh = json["refresh_token"] as? String else {
+            return nil
+        }
+        return tokenFingerprint(accessToken: access, refreshToken: refresh)
+    }
+
+    private func credentialJSON(at file: URL) -> [String: Any]? {
+        guard let data = try? Data(contentsOf: file),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              (json["type"] as? String)?.lowercased() == Self.authType else {
+            return nil
+        }
+        return json
     }
 
     // MARK: - SQLite
