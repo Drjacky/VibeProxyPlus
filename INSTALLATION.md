@@ -1,6 +1,6 @@
-# Installing VibeProxy
+# Installing VibeProxyPlus
 
-**Fork:** [Drjacky/vibeproxy](https://github.com/Drjacky/vibeproxy) — Cursor support, CLIProxyAPIPlus, **unsigned** CI builds on [this repo's Releases](https://github.com/Drjacky/vibeproxy/releases).
+**VibeProxyPlus** builds are published on [GitHub Releases](https://github.com/Drjacky/vibeproxyplus/releases) (unsigned unless signed in CI).
 
 **Requirements:** macOS 13+ on **Apple Silicon** (M1/M2/M3/M4). Intel ZIPs may appear in releases but are best-effort.
 
@@ -8,24 +8,24 @@
 
 ### Step 1: Download
 
-1. Open [**Drjacky/vibeproxy Releases**](https://github.com/Drjacky/vibeproxy/releases)
-2. Download **`VibeProxy-arm64-unsigned.zip`** or **`VibeProxy-arm64-signed.zip`** (name shows signing type)
-3. Optional: verify with `shasum -a 256 -c VibeProxy-arm64-unsigned.zip.sha256` (match your file name)
+1. Open [**Drjacky/vibeproxyplus Releases**](https://github.com/Drjacky/vibeproxyplus/releases)
+2. Download **`VibeProxyPlus-arm64-unsigned.zip`** or **`VibeProxyPlus-arm64-signed.zip`** (name shows signing type)
+3. Optional: verify with `shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256` (match your file name)
 
 ### Step 2: Install
 
 **Via ZIP:**
 1. Extract the archive
-2. Drag `VibeProxy.app` to `/Applications`
+2. Drag `VibeProxyPlus.app` to `/Applications`
 
 **Via DMG (if attached to the release):**
-1. Open the DMG, drag `VibeProxy.app` to Applications, eject the DMG
+1. Open the DMG, drag `VibeProxyPlus.app` to Applications, eject the DMG
 
 ### Step 3: First launch (unsigned build)
 
 These releases are **not** notarized and use **ad-hoc** code signing. macOS may block the first open.
 
-1. **Right-click** `VibeProxy.app` → **Open** → click **Open** in the dialog
+1. **Right-click** `VibeProxyPlus.app` → **Open** → click **Open** in the dialog
 
 Or: **System Settings** → **Privacy & Security** → **Open Anyway** after a blocked attempt.
 
@@ -46,7 +46,7 @@ After that, you can launch normally. See [README.md](README.md#github-releases-a
 
 1. **Clone this fork**
    ```bash
-   git clone https://github.com/Drjacky/vibeproxy.git
+   git clone https://github.com/Drjacky/vibeproxyplus.git
    cd vibeproxy
    ```
    The CLI binary is downloaded on first `make app` (not stored in git; public forks cannot push LFS).
@@ -60,16 +60,16 @@ After that, you can launch normally. See [README.md](README.md#github-releases-a
    This will:
    - Build the Swift executable in release mode
    - Bundle `cli-proxy-api-plus` (CLIProxyAPIPlus, includes Cursor)
-   - Create `VibeProxy.app`
+   - Create `VibeProxyPlus.app`
    - Sign with Developer ID if found, otherwise ad-hoc
 
 3. **Install**
    ```bash
    # Move to Applications folder
-   mv VibeProxy.app /Applications/
+   mv VibeProxyPlus.app /Applications/
 
    # Or run directly
-   open VibeProxy.app
+   open VibeProxyPlus.app
    ```
 
 ### Build Commands
@@ -105,17 +105,17 @@ Before installing any downloaded app, verify its authenticity:
 
 ### 1. Download from this fork
 
-Use [Drjacky/vibeproxy Releases](https://github.com/Drjacky/vibeproxy/releases) only for Cursor-enabled builds from this fork.
+Use [Drjacky/vibeproxyplus Releases](https://github.com/Drjacky/vibeproxyplus/releases) only for Cursor-enabled builds from this fork.
 
 ### 2. Verify checksum (optional)
 
 ```bash
-curl -LO https://github.com/Drjacky/vibeproxy/releases/download/vX.X.X/VibeProxy-arm64-unsigned.zip.sha256
-curl -LO https://github.com/Drjacky/vibeproxy/releases/download/vX.X.X/VibeProxy-arm64-unsigned.zip
-shasum -a 256 -c VibeProxy-arm64-unsigned.zip.sha256
+curl -LO https://github.com/Drjacky/vibeproxyplus/releases/download/vX.X.X/VibeProxyPlus-arm64-unsigned.zip.sha256
+curl -LO https://github.com/Drjacky/vibeproxyplus/releases/download/vX.X.X/VibeProxyPlus-arm64-unsigned.zip
+shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256
 ```
 
-Expected: `VibeProxy-arm64-unsigned.zip: OK`
+Expected: `VibeProxyPlus-arm64-unsigned.zip: OK`
 
 ### 3. Inspect the Code
 
@@ -130,7 +130,7 @@ All source code is available in this repository - feel free to review before bui
 This can happen if download quarantine attributes cause issues:
 
 ```bash
-xattr -cr /Applications/VibeProxy.app
+xattr -cr /Applications/VibeProxyPlus.app
 ```
 
 Then try opening again.
@@ -152,9 +152,9 @@ chmod +x build.sh create-app-bundle.sh
 ### Still Having Issues?
 
 - **Check System Requirements**: macOS 13.0 (Ventura) or later
-- **Check Logs**: Look for errors in Console.app (search for "VibeProxy")
-- **Report an Issue (fork)**: [Drjacky/vibeproxy issues](https://github.com/Drjacky/vibeproxy/issues)
+- **Check Logs**: Look for errors in Console.app (search for "VibeProxyPlus")
+- **Report an Issue (fork)**: [Drjacky/vibeproxyplus issues](https://github.com/Drjacky/vibeproxyplus/issues)
 
 ---
 
-**Questions?** Open an [issue](https://github.com/Drjacky/vibeproxy/issues) or check the [README](README.md).
+**Questions?** Open an [issue](https://github.com/Drjacky/vibeproxyplus/issues) or check the [README](README.md).

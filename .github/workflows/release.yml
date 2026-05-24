@@ -125,8 +125,8 @@ jobs:
         if: steps.cliproxy.outputs.skip != 'true'
         run: |
           set -e
-          codesign --verify --deep --strict VibeProxy.app
-          codesign -dv VibeProxy.app 2>&1 | tee codesign.txt
+          codesign --verify --deep --strict VibeProxyPlus.app
+          codesign -dv VibeProxyPlus.app 2>&1 | tee codesign.txt
 
           if grep -q 'Authority=Developer ID Application' codesign.txt; then
             SIGN_LABEL=signed
@@ -137,28 +137,28 @@ jobs:
           fi
 
           echo "sign_label=${SIGN_LABEL}" >> $GITHUB_OUTPUT
-          ZIP="VibeProxy-${{ matrix.arch }}-${SIGN_LABEL}.zip"
-          DMG="VibeProxy-${{ matrix.arch }}-${SIGN_LABEL}.dmg"
+          ZIP="VibeProxyPlus-${{ matrix.arch }}-${SIGN_LABEL}.zip"
+          DMG="VibeProxyPlus-${{ matrix.arch }}-${SIGN_LABEL}.dmg"
 
-          ditto -c -k --sequesterRsrc --keepParent "VibeProxy.app" "$ZIP"
+          ditto -c -k --sequesterRsrc --keepParent "VibeProxyPlus.app" "$ZIP"
           shasum -a 256 "$ZIP" > "${ZIP}.sha256"
           echo "zip_name=${ZIP}" >> $GITHUB_OUTPUT
 
           brew install create-dmg
           DMG_ARGS=(
-            --volname "VibeProxy"
+            --volname "VibeProxyPlus"
             --volicon "icon.png"
             --window-pos 200 120
             --window-size 600 400
             --icon-size 100
-            --icon "VibeProxy.app" 175 120
-            --hide-extension "VibeProxy.app"
+            --icon "VibeProxyPlus.app" 175 120
+            --hide-extension "VibeProxyPlus.app"
             --app-drop-link 425 120
           )
           if [ "$SIGN_LABEL" = "signed" ] && [ -n "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}" ]; then
             DMG_ARGS+=(--codesign "${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}")
           fi
-          create-dmg "${DMG_ARGS[@]}" "$DMG" "VibeProxy.app" || true
+          create-dmg "${DMG_ARGS[@]}" "$DMG" "VibeProxyPlus.app" || true
           if [ -f "$DMG" ]; then
             shasum -a 256 "$DMG" > "${DMG}.sha256"
             echo "dmg_name=${DMG}" >> $GITHUB_OUTPUT
@@ -168,12 +168,12 @@ jobs:
         if: steps.cliproxy.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: vibeproxy-${{ matrix.arch }}-${{ steps.package.outputs.sign_label }}
+          name: vibeproxyplus-${{ matrix.arch }}-${{ steps.package.outputs.sign_label }}
           path: |
-            VibeProxy-${{ matrix.arch }}-*.zip
-            VibeProxy-${{ matrix.arch }}-*.zip.sha256
-            VibeProxy-${{ matrix.arch }}-*.dmg
-            VibeProxy-${{ matrix.arch }}-*.dmg.sha256
+            VibeProxyPlus-${{ matrix.arch }}-*.zip
+            VibeProxyPlus-${{ matrix.arch }}-*.zip.sha256
+            VibeProxyPlus-${{ matrix.arch }}-*.dmg
+            VibeProxyPlus-${{ matrix.arch }}-*.dmg.sha256
           if-no-files-found: error
           retention-days: 5
 
@@ -188,7 +188,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: vibeproxy-*
+          pattern: vibeproxyplus-*
           merge-multiple: true
 
       - name: Prepare release assets and signing summary
@@ -218,7 +218,7 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            ## VibeProxy — ${{ github.repository }}
+            ## VibeProxyPlus — ${{ github.repository }}
 
             Built by GitHub Actions. Includes **Cursor provider** support (CLIProxyAPIPlus).
 
@@ -234,12 +234,12 @@ jobs:
             ### Install
 
             1. Download the ZIP for your Mac (`*-arm64-*` or `*-x86_64-*`).
-            2. Extract and move `VibeProxy.app` to **Applications**.
+            2. Extract and move `VibeProxyPlus.app` to **Applications**.
             3. For `*-unsigned*` builds: **right-click** → **Open** → confirm **Open**.
 
             ### Verify checksum
 
-            Match the `.sha256` file to the ZIP you downloaded, e.g. `shasum -a 256 -c VibeProxy-arm64-unsigned.zip.sha256`.
+            Match the `.sha256` file to the ZIP you downloaded, e.g. `shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256`.
 
             ### Cursor setup
 

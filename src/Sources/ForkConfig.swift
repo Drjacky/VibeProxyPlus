@@ -6,7 +6,7 @@ enum ForkConfig {
     static let upstreamOwner = "automazeio"
     static let upstreamRepo = "vibeproxy"
     static let forkOwner = "Drjacky"
-    static let forkRepo = "vibeproxy"
+    static let forkRepo = "vibeproxyplus"
 
     static var upstreamRepositoryURL: URL {
         URL(string: "https://github.com/\(upstreamOwner)/\(upstreamRepo)")!

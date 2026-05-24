@@ -14,6 +14,8 @@ xcuserdata/
 
 # App Bundle
 *.app
+VibeProxy.app
+VibeProxyPlus.app
 *.zip
 *.dmg
 

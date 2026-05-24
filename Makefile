@@ -1,7 +1,17 @@
-.PHONY: build app install clean run help
+.PHONY: build app install clean run help fetch-cliproxy icon
+
+icon: ## Add + badge to icon.png and regenerate AppIcon.icns
+	@chmod +x scripts/badge-app-icon.swift
+	@swift scripts/badge-app-icon.swift icon.png icon.png
+	@ICONSET=src/Sources/Resources/AppIcon.iconset; rm -rf $$ICONSET; mkdir -p $$ICONSET; \
+	for size in 16 32 128 256 512; do \
+	  sips -z $$size $$size icon.png --out "$$ICONSET/icon_$${size}x$${size}.png" >/dev/null; \
+	  sips -z $$((size*2)) $$((size*2)) icon.png --out "$$ICONSET/icon_$${size}x$${size}@2x.png" >/dev/null; \
+	done; \
+	iconutil -c icns -o src/Sources/Resources/AppIcon.icns $$ICONSET
 
 help: ## Show this help message
-	@echo "VibeProxy - macOS Menu Bar App"
+	@echo "VibeProxyPlus - macOS Menu Bar App"
 	@echo ""
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -23,22 +33,22 @@ fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
 app: fetch-cliproxy ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
 	@./create-app-bundle.sh
-	@echo "✅ App bundle created: VibeProxy.app"
+	@echo "✅ App bundle created: VibeProxyPlus.app"
 
 install: app ## Build and install to /Applications
 	@echo "📲 Installing to /Applications..."
-	@rm -rf "/Applications/VibeProxy.app"
-	@cp -r "VibeProxy.app" /Applications/
-	@echo "✅ Installed to /Applications/VibeProxy.app"
+	@rm -rf "/Applications/VibeProxyPlus.app"
+	@cp -r "VibeProxyPlus.app" /Applications/
+	@echo "✅ Installed to /Applications/VibeProxyPlus.app"
 
 run: app ## Build and run the app
 	@echo "🚀 Launching app..."
-	@open "VibeProxy.app"
+	@open "VibeProxyPlus.app"
 
 clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
 	@rm -rf src/.build
-	@rm -rf "VibeProxy.app"
+	@rm -rf "VibeProxyPlus.app"
 	@rm -rf src/Sources/Resources/cli-proxy-api
 	@rm -rf src/Sources/Resources/config.yaml
 	@rm -rf src/Sources/Resources/static
@@ -50,7 +60,7 @@ test: ## Run a quick test build
 	@echo "✅ Test build successful"
 
 info: ## Show project information
-	@echo "Project: VibeProxy - macOS Menu Bar App"
+	@echo "Project: VibeProxyPlus - macOS Menu Bar App"
 	@echo "Language: Swift 5.9+"
 	@echo "Platform: macOS 13.0+"
 	@echo ""
@@ -62,15 +72,15 @@ info: ## Show project information
 	@tree -L 3 -I ".build" || echo "  (install 'tree' for better output)"
 
 open: ## Open app bundle to inspect contents
-	@if [ -d "VibeProxy.app" ]; then \
-		open "VibeProxy.app"; \
+	@if [ -d "VibeProxyPlus.app" ]; then \
+		open "VibeProxyPlus.app"; \
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 	fi
 
 edit-config: ## Edit the bundled config.yaml
-	@if [ -d "VibeProxy.app" ]; then \
-		open -e "VibeProxy.app/Contents/Resources/config.yaml"; \
+	@if [ -d "VibeProxyPlus.app" ]; then \
+		open -e "VibeProxyPlus.app/Contents/Resources/config.yaml"; \
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 	fi

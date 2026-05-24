@@ -7,11 +7,11 @@
     <key>CFBundleExecutable</key>
     <string>CLIProxyMenuBar</string>
     <key>CFBundleIdentifier</key>
-    <string>com.vibeproxy.app</string>
+    <string>com.vibeproxyplus.app</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>VibeProxy</string>
+    <string>VibeProxyPlus</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
