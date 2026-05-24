@@ -1,0 +1,2 @@
+# Large bundled backend (~50MB). Requires Git LFS: brew install git-lfs && git lfs install
+src/Sources/Resources/cli-proxy-api-plus filter=lfs diff=lfs merge=lfs -text
