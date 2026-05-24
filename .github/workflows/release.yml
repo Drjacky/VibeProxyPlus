@@ -11,23 +11,23 @@ permissions:
 
 jobs:
   get-cliproxy-version:
-    name: Get CLIProxyAPI Version
+    name: Get CLIProxyAPIPlus Version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       tag: ${{ steps.get_version.outputs.tag }}
     steps:
-      - name: Get latest CLIProxyAPI release
+      - name: Get latest CLIProxyAPIPlus release
         id: get_version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Use gh CLI with authentication to avoid rate limiting
-          LATEST_TAG=$(gh release view --repo router-for-me/CLIProxyAPI --json tagName -q '.tagName')
+          # Bundled backend: kaitranntt/CLIProxyAPIPlus (includes Cursor provider / -cursor-login)
+          LATEST_TAG=$(gh release view --repo kaitranntt/CLIProxyAPIPlus --json tagName -q '.tagName')
           VERSION=${LATEST_TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Found CLIProxyAPI version: $VERSION (tag: $LATEST_TAG)"
+          echo "Found CLIProxyAPIPlus version: $VERSION (tag: $LATEST_TAG)"
 
   build-signed:
     name: Build and Sign macOS App (${{ matrix.arch }})
@@ -71,7 +71,7 @@ jobs:
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION} (build ${BUILD_NUMBER}) for ${{ matrix.arch }}"
 
-      - name: Download CLIProxyAPI for ${{ matrix.arch }}
+      - name: Download CLIProxyAPIPlus for ${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -80,15 +80,15 @@ jobs:
           # Use version from pre-fetch job
           VERSION="${{ needs.get-cliproxy-version.outputs.version }}"
           LATEST_TAG="${{ needs.get-cliproxy-version.outputs.tag }}"
-          echo "Using CLIProxyAPI version: $VERSION (tag: $LATEST_TAG)"
+          echo "Using CLIProxyAPIPlus version: $VERSION (tag: $LATEST_TAG)"
           
-          RELEASE_JSON=$(gh api "repos/router-for-me/CLIProxyAPI/releases/tags/$LATEST_TAG")
-          ASSET_REGEX="^CLIProxyAPI_.+_${{ matrix.cliproxy_asset_regex }}\\.tar\\.gz$"
+          RELEASE_JSON=$(gh api "repos/kaitranntt/CLIProxyAPIPlus/releases/tags/$LATEST_TAG")
+          ASSET_REGEX="^CLIProxyAPIPlus_.+_${{ matrix.cliproxy_asset_regex }}\\.tar\\.gz$"
           FILENAME=$(echo "$RELEASE_JSON" | jq -r --arg regex "$ASSET_REGEX" '.assets[] | select(.name | test($regex)) | .name' | head -n 1)
           URL=$(echo "$RELEASE_JSON" | jq -r --arg regex "$ASSET_REGEX" '.assets[] | select(.name | test($regex)) | .browser_download_url' | head -n 1)
           
           if [ -z "$FILENAME" ] || [ "$FILENAME" = "null" ] || [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "Error: Failed to resolve CLIProxyAPI asset for ${{ matrix.arch }}" >&2
+            echo "Error: Failed to resolve CLIProxyAPIPlus asset for ${{ matrix.arch }}" >&2
             echo "$RELEASE_JSON" | jq -r '.assets[].name' >&2
             exit 1
           fi
