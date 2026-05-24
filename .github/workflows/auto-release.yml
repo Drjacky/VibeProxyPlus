@@ -84,7 +84,7 @@ jobs:
           set -e
           
           # Get current version from latest tag
-          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v10.8.162")
           CURRENT_VERSION="${CURRENT_TAG#v}"
           
           echo "Current version: $CURRENT_VERSION"

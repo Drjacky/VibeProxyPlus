@@ -123,13 +123,9 @@ make clean
 cd src && swift test
 ```
 
----
-
-## Maintaining this project
-
-VibeProxyPlus can optionally merge macOS UI changes from upstream [VibeProxyPlus](https://github.com/automazeio/vibeproxyplus) while shipping **CLIProxyAPIPlus** from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus).
-
 The ~50MB `cli-proxy-api-plus` binary is **not in git** (fetched at build time). See `scripts/fetch-cliproxy-plus.sh` and `cli-proxy-api-plus.version`.
+
+App version: edit `src/Info.plist` (`CFBundleShortVersionString` and `CFBundleVersion`), or pass `APP_VERSION` when building.
 
 ---
 
@@ -140,14 +136,6 @@ The ~50MB `cli-proxy-api-plus` binary is **not in git** (fetched at build time).
 | [Build](.github/workflows/build.yml)     | `swift build` + tests on push/PR            |
 | [release](.github/workflows/release.yml) | Tagged `v*` → ZIP artifacts on **Releases** |
 
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-Sparkle auto-update feeds: `appcast.xml` (arm64) and `appcast-x86_64.xml` (Intel). They start empty; add entries when you publish signed releases (and replace `SUPublicEDKey` in `src/Info.plist` with your own Sparkle key).
-
-Optional automation: `update-cliproxyapi` → `auto-release` (needs repo secret **`AUTO_UPDATE_TOKEN`**).
 
 ---
 

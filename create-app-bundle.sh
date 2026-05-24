@@ -104,17 +104,17 @@ fi
 echo -e "${BLUE}Copying Info.plist...${NC}"
 cp "$SRC_DIR/Info.plist" "$APP_DIR/Contents/"
 
-# Inject version from git tag or environment variable
 VERSION="${APP_VERSION:-}"
 if [ -z "$VERSION" ]; then
-    # Try to get version from git tag
-    VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
-    # Remove 'v' prefix if present
-    VERSION="${VERSION#v}"
+    GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+    if [ -n "$GIT_TAG" ]; then
+        VERSION="${GIT_TAG#v}"
+    else
+        VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$SRC_DIR/Info.plist")
+    fi
 fi
 
-# Extract build number from full git describe (e.g., v1.0.0-5-g1234567 -> 5, or just use commit count)
-BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo "1")
+BUILD_NUMBER="${APP_BUILD_NUMBER:-$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$SRC_DIR/Info.plist")}"
 
 echo -e "${BLUE}Setting version to: ${VERSION} (build ${BUILD_NUMBER})${NC}"
 
