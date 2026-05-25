@@ -174,7 +174,7 @@ Use tag names like `v10.8.162` (must start with `v`).
 
 ## Credits
 
-- [VibeProxyPlus](https://github.com/automazeio/vibeproxyplus) - original macOS menu bar app
+- [VibeProxy](https://github.com/automazeio/vibeproxy) - original macOS menu bar app
 - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) - unified proxy server (Cursor and other providers)
 
 ---
