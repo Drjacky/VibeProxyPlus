@@ -181,9 +181,4 @@ Use tag names like `v10.8.162` (must start with `v`).
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
-
-## Support
-
-- **Issues:** https://github.com/Drjacky/vibeproxyplus/issues
-- **Repository:** https://github.com/Drjacky/vibeproxyplus
+This project is licensed under the Apache License 2.0 -- see the [LICENSE](LICENSE) for details.
