@@ -316,10 +316,6 @@ jobs:
 
             Match the `.sha256` file to the ZIP you downloaded, e.g. `shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256`.
 
-            ### Cursor setup
-
-            [CURSOR_SETUP.md](https://github.com/${{ github.repository }}/blob/main/CURSOR_SETUP.md)
-
             ### Developer ID (optional)
 
             Add secrets `APPLE_DEVELOPER_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_CERTIFICATE_PASSWORD`, and `APPLE_DEVELOPER_ID_APPLICATION` to produce `*-signed*` artifacts.

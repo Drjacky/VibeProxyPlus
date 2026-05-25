@@ -43,12 +43,6 @@ Any tool that supports a custom OpenAI-compatible base URL. Point the client at 
   <img src="demo/vibeproxyplus-demo.png" width="600" alt="VibeProxyPlus demo"></a>
 </p>
 
-### Setup guides
-
-- [Cursor provider](CURSOR_SETUP.md)
-- [Factory CLI](FACTORY_SETUP.md)
-- [Amp CLI](AMPCODE_SETUP.md)
-
 ---
 
 ## Features
@@ -103,8 +97,8 @@ Regenerate `AppIcon.icns` after editing `icon.png`: `make icon`
 2. Enable the providers you need.
 3. Authenticate:
    - **Connect** / **Add Account** for OAuth providers
-   - **Fetch Auth Locally** or **Add Account** for Cursor ([CURSOR_SETUP.md](CURSOR_SETUP.md))
-4. Point your tool at `http://localhost:8317/v1` with any placeholder API key (see provider setup docs).
+   - **Fetch Auth Locally** or **Add Account** for Cursor
+4. Point your tool at `http://localhost:8317/v1` with any placeholder API key.
 
 ---
 
