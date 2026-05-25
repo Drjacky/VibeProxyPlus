@@ -818,12 +818,8 @@ struct SettingsView: View {
                         }
                 }
 
-                Text("License: MIT")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
                 HStack(spacing: 4) {
-                    Text("© 2026")
+                    Text("©2026")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Link("Drjacky", destination: AppConfig.repositoryURL)
