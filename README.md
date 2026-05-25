@@ -35,10 +35,6 @@ VibeProxyPlus connects the AI subscriptions you already pay for to a single loca
 - **Cursor** (OAuth or local token import from Cursor IDE)
 - **Custom providers** (OpenAI-compatible endpoints you define)
 
-**Works with**
-
-Any tool that supports a custom OpenAI-compatible base URL. Point the client at `http://localhost:8317/v1` and use a placeholder API key where required.
-
 <p align="center">
   <img src="demo/vibeproxyplus-demo.png" width="600" alt="VibeProxyPlus demo"></a>
 </p>
@@ -47,14 +43,19 @@ Any tool that supports a custom OpenAI-compatible base URL. Point the client at 
 
 ## Features
 
-- Native SwiftUI menu bar app (macOS 13+)
-- One-click server start/stop; credentials in `~/.cli-proxy-api/`
-- OAuth for Codex, Claude, Gemini, Kimi, Qwen, Antigravity; API key for Z.AI GLM
-- **Cursor:** Add Account (PKCE) or Fetch Auth Locally from Cursor IDE `state.vscdb`
-- Multi-account per provider with round-robin and failover
-- Provider enable/disable with hot reload
-- Vercel AI Gateway option for Claude (see settings)
-- Self-contained `.app` (CLI binary, config, assets)
+- Native SwiftUI **menu bar app** (macOS 13+); server starts automatically on launch
+- Local OpenAI-compatible API at **`http://localhost:8317/v1`** (ThinkingProxy in front of CLIProxyAPIPlus on port 8318)
+- Start/stop from the menu bar or Settings; credentials stored in `~/.cli-proxy-api/`
+- **OAuth:** Claude Code, Codex (ChatGPT), Gemini, Kimi, Qwen, Antigravity, GitHub Copilot, Cursor
+- **API key:** Z.AI GLM (and custom providers via `openai-compatibility` in config)
+- **Cursor:** browser login (PKCE) or **Fetch Auth Locally** from Cursor IDE `state.vscdb`, with optional auto-import when tokens change
+- **Custom providers:** add OpenAI-compatible endpoints from `config.yaml` (display name, models, API keys in app or config)
+- **Multi-account** per provider: round-robin, failover, and per-account enable/disable
+- **Provider toggles** in Settings with hot reload (no restart required)
+- **Vercel AI Gateway** for Claude (optional; configure in Settings)
+- **Launch at login** toggle
+- **Check for Updates** via Sparkle (manual; automatic checks off until you configure `appcast.xml` and signing)
+- Self-contained `.app` (CLIProxyAPIPlus binary, config, icons, Sparkle)
 
 ---
 
