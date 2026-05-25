@@ -8,6 +8,9 @@ name: Build and Release
 #   3. push tag v* — git push origin v10.8.163 (builds as draft release)
 #
 # Pushing to main does NOT release. Auto-release pushes v10.* tags after CLIProxy bumps.
+#
+# Tag pushes use the workflow file AT THE TAGGED COMMIT. Re-tag main after workflow changes:
+#   git tag -fa v10.8.162 && git push origin :refs/tags/v10.8.162 && git push origin v10.8.162
 
 on:
   push:
@@ -138,13 +141,6 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9"
-
-      - name: Import code signing certificates (optional)
-        uses: apple-actions/import-codesign-certs@v2
-        continue-on-error: true
-        with:
-          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
-          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
 
       - name: Resolve app version
         id: app_version
@@ -305,44 +301,73 @@ jobs:
             echo "publish_release=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Upload assets to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Create or update GitHub Release and upload assets
         env:
-          GITHUB_TOKEN: ${{ secrets.AUTO_UPDATE_TOKEN }}
-        with:
-          token: ${{ secrets.AUTO_UPDATE_TOKEN }}
-          tag_name: ${{ needs.resolve.outputs.tag_name }}
-          name: VibeProxyPlus ${{ needs.resolve.outputs.version }}
-          target_commitish: ${{ github.event_name == 'release' && github.event.release.target_commitish || github.sha }}
-          files: release/*
-          draft: ${{ needs.resolve.outputs.draft == 'true' }}
-          prerelease: false
-          make_latest: ${{ steps.summary.outputs.publish_release == 'true' }}
-          generate_release_notes: true
-          body: |
-            ## VibeProxyPlus — ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.AUTO_UPDATE_TOKEN }}
+          TAG: ${{ needs.resolve.outputs.tag_name }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          DRAFT: ${{ needs.resolve.outputs.draft }}
+          FILE_LIST: ${{ steps.summary.outputs.file_list }}
+          PUBLISH: ${{ steps.summary.outputs.publish_release }}
+        run: |
+          set -e
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "AUTO_UPDATE_TOKEN repository secret is missing or empty." >&2
+            exit 1
+          fi
+          gh auth status
 
-            Built by GitHub Actions. Includes **Cursor provider** support (CLIProxyAPIPlus).
+          cat > release-notes.md <<EOF
+          ## VibeProxyPlus — ${{ github.repository }}
 
-            ### Code signing (read the filename)
+          Built by GitHub Actions. Includes **Cursor provider** support (CLIProxyAPIPlus).
 
-            | Suffix | Meaning |
-            |--------|---------|
-            | `-unsigned` | Ad-hoc only — not Apple Developer ID, not notarized. **Right-click → Open** on first launch. |
-            | `-signed` | Signed with Apple Developer ID (repo secrets were set). Notarization is not included unless you extend the workflow. |
+          ### Code signing (read the filename)
 
-            **Assets in this release:** ${{ steps.summary.outputs.file_list }}
+          | Suffix | Meaning |
+          |--------|---------|
+          | \`-unsigned\` | Ad-hoc only — **Right-click → Open** on first launch. |
+          | \`-signed\` | Apple Developer ID (if signing secrets were set). |
 
-            ### Install
+          **Assets:** ${FILE_LIST}
 
-            1. Download the ZIP for your Mac (`*-arm64-*`; Intel builds not in CI yet).
-            2. Extract and move `VibeProxyPlus.app` to **Applications**.
-            3. For `*-unsigned*` builds: **right-click** → **Open** → confirm **Open**.
+          ### Install
 
-            ### Verify checksum
+          1. Download \`*-arm64-*\` ZIP for Apple Silicon.
+          2. Extract and move \`VibeProxyPlus.app\` to **Applications**.
+          3. For \`*-unsigned*\`: **right-click** → **Open** → **Open**.
 
-            Match the `.sha256` file to the ZIP you downloaded, e.g. `shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256`.
+          ### Verify checksum
 
-            ### Developer ID (optional)
+          \`shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256\`
+          EOF
 
-            Add secrets `APPLE_DEVELOPER_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_CERTIFICATE_PASSWORD`, and `APPLE_DEVELOPER_ID_APPLICATION` to produce `*-signed*` artifacts.
+          DRAFT_ARGS=()
+          if [ "$DRAFT" = "true" ]; then
+            DRAFT_ARGS=(--draft)
+          fi
+
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Updating existing release $TAG"
+            gh release edit "$TAG" --repo "${{ github.repository }}" \
+              --title "VibeProxyPlus ${VERSION}" \
+              --notes-file release-notes.md \
+              "${DRAFT_ARGS[@]}"
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}" \
+              --title "VibeProxyPlus ${VERSION}" \
+              --notes-file release-notes.md \
+              "${DRAFT_ARGS[@]}"
+          fi
+
+          for f in release/*; do
+            echo "Uploading $(basename "$f")..."
+            gh release upload "$TAG" "$f" --repo "${{ github.repository }}" --clobber
+          done
+
+          if [ "$PUBLISH" = "true" ]; then
+            gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false
+          fi
+
+          echo "Release $TAG ready:"
+          gh release view "$TAG" --repo "${{ github.repository }}"
