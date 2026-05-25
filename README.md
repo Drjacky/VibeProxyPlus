@@ -25,7 +25,7 @@ Claude Code, Codex (ChatGPT), Gemini, Kimi, Qwen, Antigravity, Z.AI GLM (API key
 Use subscriptions with tools such as [Factory Droids](https://app.factory.ai/r/FM8BJHFQ), Amp, KiloCode, and any client that accepts a local OpenAI base URL.
 
 <p align="center">
-  <a href="https://www.loom.com/share/5cf54acfc55049afba725ab443dd3777"><img src="vibeproxyplus-factory-video.webp" width="600" height="380" alt="VibeProxyPlus demo"></a>
+  <img src="demo/vibeproxyplus-demo.png" width="600" alt="VibeProxyPlus demo"></a>
 </p>
 
 ### Setup guides
