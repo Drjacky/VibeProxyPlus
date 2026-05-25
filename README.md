@@ -131,13 +131,33 @@ App version: edit `src/Info.plist` (`CFBundleShortVersionString` and `CFBundleVe
 
 ## GitHub Releases and CI
 
-| Workflow                                 | Purpose                                     |
-|------------------------------------------|---------------------------------------------|
-| [Build](.github/workflows/build.yml)     | `swift build` + tests on push/PR            |
-| [release](.github/workflows/release.yml) | Tagged `v*` → ZIP artifacts on **Releases** |
+| Workflow                                           | When it runs      | What it does                                 |
+|----------------------------------------------------|-------------------|----------------------------------------------|
+| [Build](.github/workflows/build.yml)               | Push/PR to `main` | Compile + tests only (no release)            |
+| [Build and Release](.github/workflows/release.yml) | See below         | Build ZIP/DMG and attach to a GitHub Release |
 
+**Pushing commits to `main` does not create a release.**
+
+### Option A: Draft release on GitHub (recommended)
+
+1. **Releases** → **Draft a new release**
+2. Create tag `v10.8.163` (or your version) on the commit you want
+3. Leave **Set as a pre-release** off, keep **This is a draft release** checked
+4. Click **Save draft** (do not publish yet)
+5. **Actions** runs **Build and Release** automatically and uploads ZIP/DMG to that draft
+6. Review assets on the draft, then **Publish release** when ready
+
+Use tag names like `v10.8.162` (must start with `v`).
+
+### Option B: Run workflow manually
+
+1. **Actions** → **Build and Release** → **Run workflow**
+2. **version:** e.g. `10.8.163` (no `v` prefix)
+3. **draft:** `true` to keep a draft on GitHub (default)
+4. **publish:** `true` only if `draft` is `false` and you want it live immediately
 
 ---
+
 
 ## Credits
 

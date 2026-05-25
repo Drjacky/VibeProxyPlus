@@ -1,26 +1,91 @@
 name: Build and Release
 
-# Publishes to this repository's Releases page.
-# Uses Developer ID when GitHub secrets + cert import are configured; otherwise ad-hoc (unsigned).
-# Artifact names include -unsigned or -signed so the release page is explicit.
+# Build ZIP/DMG and attach to a GitHub Release (draft by default).
+#
+# Triggers:
+#   1. workflow_dispatch — Actions → "Build and Release" → set version, optional draft/publish
+#   2. release created (draft) — Releases → Draft new release with tag v* → CI builds and uploads assets
+#
+# Pushing to main does NOT release. Pushing a v* tag alone does NOT release (use draft or manual run).
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version label when not triggered by a v* tag (workflow_dispatch only).'
-        required: false
-        default: ''
+        description: 'App version (e.g. 10.8.162). Tag will be v<version>.'
+        required: true
+      draft:
+        description: 'Save as draft release on GitHub'
+        type: boolean
+        default: true
+      publish:
+        description: 'Publish immediately (only if draft is false)'
+        type: boolean
+        default: false
+  release:
+    types: [created]
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.event.release.tag_name || format('manual-{0}', github.event.inputs.version) || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
+  resolve:
+    name: Resolve release target
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag_name: ${{ steps.meta.outputs.tag_name }}
+      draft: ${{ steps.meta.outputs.draft }}
+      publish: ${{ steps.meta.outputs.publish }}
+      should_run: ${{ steps.meta.outputs.should_run }}
+    steps:
+      - name: Resolve version and tag
+        id: meta
+        run: |
+          set -e
+          SHOULD_RUN=true
+          DRAFT=true
+          PUBLISH=false
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            DRAFT="${{ github.event.inputs.draft }}"
+            PUBLISH="${{ github.event.inputs.publish }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+            VERSION="${TAG#v}"
+            DRAFT="${{ github.event.release.draft }}"
+            if [ "$DRAFT" != "true" ]; then
+              echo "Skipping: release was created as published (not a draft). Use draft releases to trigger builds."
+              SHOULD_RUN=false
+            fi
+          else
+            echo "Unsupported event: ${{ github.event_name }}"
+            SHOULD_RUN=false
+          fi
+
+          if [ "$SHOULD_RUN" = "true" ]; then
+            if [ -z "$VERSION" ]; then
+              echo "Version is empty" >&2
+              exit 1
+            fi
+            TAG_NAME="v${VERSION}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          fi
+
+          echo "draft=$DRAFT" >> $GITHUB_OUTPUT
+          echo "publish=$PUBLISH" >> $GITHUB_OUTPUT
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+
   get-cliproxy-version:
     name: Get CLIProxyAPIPlus Version
+    needs: resolve
+    if: needs.resolve.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
@@ -38,7 +103,8 @@ jobs:
 
   build:
     name: Build (${{ matrix.arch }})
-    needs: get-cliproxy-version
+    needs: [resolve, get-cliproxy-version]
+    if: needs.resolve.outputs.should_run == 'true'
     runs-on: macos-14
     strategy:
       fail-fast: false
@@ -55,6 +121,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'release' && needs.resolve.outputs.tag_name || github.ref }}
           fetch-depth: 0
 
       - name: Set up Swift
@@ -72,13 +139,7 @@ jobs:
       - name: Resolve app version
         id: app_version
         run: |
-          if [ "${{ github.event_name }}" = "push" ] && [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          elif [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0-dev")
-          fi
+          VERSION="${{ needs.resolve.outputs.version }}"
           BUILD_NUMBER=$(git rev-list --count HEAD)
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
@@ -178,10 +239,10 @@ jobs:
           retention-days: 5
 
   release:
-    name: Publish GitHub Release
-    needs: [get-cliproxy-version, build]
+    name: Upload to GitHub Release
+    needs: [resolve, get-cliproxy-version, build]
+    if: needs.resolve.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Download build artifacts
@@ -210,12 +271,26 @@ jobs:
           FILE_LIST=$(ls -1 release/*.zip release/*.dmg 2>/dev/null | xargs -I{} basename {} | paste -sd ',' -)
           echo "file_list=${FILE_LIST}" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release
+          DRAFT="${{ needs.resolve.outputs.draft }}"
+          PUBLISH="${{ needs.resolve.outputs.publish }}"
+          if [ "$DRAFT" = "true" ]; then
+            echo "publish_release=false" >> $GITHUB_OUTPUT
+          elif [ "$PUBLISH" = "true" ]; then
+            echo "publish_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "publish_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.resolve.outputs.tag_name }}
+          name: VibeProxyPlus ${{ needs.resolve.outputs.version }}
+          target_commitish: ${{ github.event_name == 'release' && github.event.release.target_commitish || github.sha }}
           files: release/*
-          draft: false
+          draft: ${{ needs.resolve.outputs.draft == 'true' }}
           prerelease: false
+          make_latest: ${{ steps.summary.outputs.publish_release == 'true' }}
           generate_release_notes: true
           body: |
             ## VibeProxyPlus — ${{ github.repository }}
@@ -247,7 +322,7 @@ jobs:
 
             ### Developer ID (optional)
 
-            Add secrets `APPLE_DEVELOPER_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_CERTIFICATE_PASSWORD`, and `APPLE_DEVELOPER_ID_APPLICATION` to produce `*-signed*` artifacts on the next tag push.
+            Add secrets `APPLE_DEVELOPER_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_CERTIFICATE_PASSWORD`, and `APPLE_DEVELOPER_ID_APPLICATION` to produce `*-signed*` artifacts.
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
