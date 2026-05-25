@@ -17,10 +17,6 @@ concurrency:
   group: auto-release
   cancel-in-progress: true
 
-env:
-  CLIPROXY_REPO: kaitranntt/CLIProxyAPIPlus
-  CLIPROXY_RELEASES_URL: https://github.com/kaitranntt/CLIProxyAPIPlus/releases
-
 jobs:
   auto-release:
     runs-on: ubuntu-latest
