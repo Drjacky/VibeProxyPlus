@@ -20,9 +20,24 @@ Pre-built apps: **[Releases](https://github.com/Drjacky/vibeproxyplus/releases)*
 
 ## Supported providers
 
-Claude Code, Codex (ChatGPT), Gemini, Kimi, Qwen, Antigravity, Z.AI GLM (API key), GitHub Copilot (where configured), **Cursor**, and custom OpenAI-compatible providers.
+VibeProxyPlus connects the AI subscriptions you already pay for to a single local endpoint (`http://localhost:8317/v1`). Enable only the providers you need in Settings.
 
-Use subscriptions with tools such as [Factory Droids](https://app.factory.ai/r/FM8BJHFQ), Amp, KiloCode, and any client that accepts a local OpenAI base URL.
+**Built-in providers**
+
+- **Claude Code** (OAuth)
+- **Codex / ChatGPT** (OAuth)
+- **Gemini** (OAuth)
+- **Kimi** (OAuth)
+- **Qwen** (OAuth)
+- **Antigravity** (OAuth)
+- **Z.AI GLM** (API key)
+- **GitHub Copilot** (OAuth, when configured)
+- **Cursor** (OAuth or local token import from Cursor IDE)
+- **Custom providers** (OpenAI-compatible endpoints you define)
+
+**Works with**
+
+Any tool that supports a custom OpenAI-compatible base URL. Point the client at `http://localhost:8317/v1` and use a placeholder API key where required.
 
 <p align="center">
   <img src="demo/vibeproxyplus-demo.png" width="600" alt="VibeProxyPlus demo"></a>
