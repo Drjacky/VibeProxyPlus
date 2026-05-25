@@ -126,35 +126,27 @@ jobs:
           echo "Extracting to temporary directory..."
           tar -xzf "$TEMP_DIR/$FILENAME" -C "$TEMP_DIR"
           
-          # Find the binary file - look for expected CLIProxyAPI binary names
-          # These are the expected binary names, not documentation or config files
-          EXTRACTED_FILE=$(tar -tf "$TEMP_DIR/$FILENAME" | grep -E '^(cli-proxy-api|CLIProxyAPI|cli-proxy-api-plus|CLIProxyAPIPlus)$' | head -n 1)
-          
-          # If not found by exact name, exclude all known non-binary files
-          if [ -z "$EXTRACTED_FILE" ]; then
-            EXTRACTED_FILE=$(tar -tf "$TEMP_DIR/$FILENAME" | grep -v -E '(LICENSE|README|\.md$|\.txt$|\.yaml$|\.yml$|\.json$)' | head -n 1)
+          BINARY=$(find "$TEMP_DIR" -type f \( -name 'CLIProxyAPIPlus' -o -name 'cli-proxy-api-plus' \) | head -n 1)
+          if [ -z "$BINARY" ]; then
+            BINARY=$(find "$TEMP_DIR" -type f -perm -111 ! -name '*.sh' | head -n 1)
           fi
           
-          if [ -z "$EXTRACTED_FILE" ]; then
+          if [ -z "$BINARY" ] || [ ! -f "$BINARY" ]; then
              echo "Error: Could not find binary in tarball" >&2
              echo "Tarball contents:" >&2
              tar -tf "$TEMP_DIR/$FILENAME" >&2
+             find "$TEMP_DIR" -type f >&2
              exit 1
           fi
           
-          echo "Found binary: $EXTRACTED_FILE"
-          
-          if [ ! -f "$TEMP_DIR/$EXTRACTED_FILE" ]; then
-             echo "Error: Extraction failed, $EXTRACTED_FILE not found" >&2
-             exit 1
-          fi
+          echo "Found binary: $BINARY"
           
           echo "Creating target directory..."
           mkdir -p "$TARGET_DIR"
           
-          VERIFY_FILE="$TEMP_DIR/cli-proxy-api-plus"
-          echo "Copying $EXTRACTED_FILE to $VERIFY_FILE for verification"
-          cp "$TEMP_DIR/$EXTRACTED_FILE" "$VERIFY_FILE"
+          VERIFY_FILE="$TEMP_DIR/verified-cli-proxy-api-plus"
+          echo "Copying binary to $VERIFY_FILE for verification"
+          cp "$BINARY" "$VERIFY_FILE"
           chmod +x "$VERIFY_FILE"
 
           FILE_SIZE=$(stat -c%s "$VERIFY_FILE" 2>/dev/null || stat -f%z "$VERIFY_FILE" 2>/dev/null)
