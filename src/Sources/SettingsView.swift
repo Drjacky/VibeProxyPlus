@@ -826,7 +826,7 @@ struct SettingsView: View {
                     Text("© 2026")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Link("Drjacky", destination: ForkConfig.repositoryURL)
+                    Link("Drjacky", destination: AppConfig.repositoryURL)
                         .font(.caption)
                         .underline()
                         .foregroundColor(.secondary)
@@ -835,7 +835,7 @@ struct SettingsView: View {
                         }
                 }
 
-                Link("Report an issue", destination: ForkConfig.issuesURL)
+                Link("Report an issue", destination: AppConfig.issuesURL)
                     .font(.caption)
                     .padding(.top, 6)
                     .onHover { inside in

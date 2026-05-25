@@ -1,7 +1,7 @@
 import Foundation
 
-/// Project URLs for this fork. Upstream sync should not overwrite this file.
-enum ForkConfig {
+/// VibeProxyPlus repository URLs and update feeds.
+enum AppConfig {
     static let owner = "Drjacky"
     static let repo = "vibeproxyplus"
 

@@ -1,4 +1,4 @@
-# Using Cursor as a provider (fork)
+# Using Cursor as a provider
 
 Use your **Cursor subscription** through VibeProxyPlus at `http://localhost:8317` from agent tools.
 
@@ -51,7 +51,7 @@ Configure the tool's OpenAI-compatible provider to use `http://localhost:8317/v1
 | Fetch Auth Locally fails         | Open Cursor IDE, sign in, quit and reopen VibeProxyPlus, try again                          |
 | No Cursor models in `/v1/models` | Confirm `cursor.json` exists in `~/.cli-proxy-api/`, provider enabled, server restarted |
 | 401 from proxy                   | Re-fetch tokens or use Add Account                                                      |
-| Releases for this fork | See [VibeProxyPlus releases](https://github.com/Drjacky/vibeproxyplus/releases) |
+| Download the app | See [VibeProxyPlus releases](https://github.com/Drjacky/vibeproxyplus/releases) |
 
 ## Security
 

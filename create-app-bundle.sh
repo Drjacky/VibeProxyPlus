@@ -17,7 +17,7 @@ BUNDLE_ID="com.github.drjacky"
 BUILD_DIR="$SRC_DIR/.build/release"
 APP_DIR="$PROJECT_DIR/$APP_NAME.app"
 
-# Binary is gitignored on this fork; download if missing or still an LFS pointer
+# Binary is not in git; download if missing or still an LFS pointer
 BINARY_RESOURCE="$SRC_DIR/Sources/Resources/cli-proxy-api-plus"
 if [ ! -f "$BINARY_RESOURCE" ] || [ ! -s "$BINARY_RESOURCE" ] || head -1 "$BINARY_RESOURCE" 2>/dev/null | grep -q 'git-lfs'; then
     echo -e "${BLUE}Fetching cli-proxy-api-plus...${NC}"

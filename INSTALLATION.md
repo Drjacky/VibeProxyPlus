@@ -4,7 +4,7 @@
 
 **Requirements:** macOS 13+ on **Apple Silicon** (M1/M2/M3/M4). Intel ZIPs may appear in releases but are best-effort.
 
-## Option 1: Download from this fork's Releases (recommended)
+## Option 1: Download from GitHub Releases (recommended)
 
 ### Step 1: Download
 
@@ -44,12 +44,12 @@ After that, you can launch normally. See [README.md](README.md#github-releases-a
 
 ### Build Instructions
 
-1. **Clone this fork**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/Drjacky/vibeproxyplus.git
    cd vibeproxyplus
    ```
-   The CLI binary is downloaded on first `make app` (not stored in git; public forks cannot push LFS).
+   The CLI binary is downloaded on first `make app` (not stored in git).
 
 2. **Build the app**
    ```bash
@@ -103,9 +103,9 @@ CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./create-app-bu
 
 Before installing any downloaded app, verify its authenticity:
 
-### 1. Download from this fork
+### 1. Download from GitHub Releases
 
-Use [Drjacky/vibeproxyplus Releases](https://github.com/Drjacky/vibeproxyplus/releases) only for Cursor-enabled builds from this fork.
+Use [Drjacky/vibeproxyplus Releases](https://github.com/Drjacky/vibeproxyplus/releases).
 
 ### 2. Verify checksum (optional)
 
@@ -153,7 +153,7 @@ chmod +x build.sh create-app-bundle.sh
 
 - **Check System Requirements**: macOS 13.0 (Ventura) or later
 - **Check Logs**: Look for errors in Console.app (search for "VibeProxyPlus")
-- **Report an Issue (fork)**: [Drjacky/vibeproxyplus issues](https://github.com/Drjacky/vibeproxyplus/issues)
+- **Report an Issue**: [Drjacky/vibeproxyplus issues](https://github.com/Drjacky/vibeproxyplus/issues)
 
 ---
 

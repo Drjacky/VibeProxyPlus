@@ -1,6 +1,5 @@
 #!/bin/bash
-# Download CLIProxyAPIPlus into src/Sources/Resources/ (gitignored on this fork).
-# Public GitHub forks cannot push new LFS objects; CI and local builds fetch the binary instead.
+# Download CLIProxyAPIPlus into src/Sources/Resources/ (not in git; fetched at build time).
 
 set -euo pipefail
 

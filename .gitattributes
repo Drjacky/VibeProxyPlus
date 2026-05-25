@@ -1,3 +1,3 @@
-# cli-proxy-api-plus is not stored in git on this fork (GitHub blocks LFS uploads on public forks).
+# cli-proxy-api-plus is not stored in git (fetched by scripts/fetch-cliproxy-plus.sh).
 # See scripts/fetch-cliproxy-plus.sh and src/Sources/Resources/cli-proxy-api-plus.version
 

@@ -102,7 +102,7 @@ vibeproxyplus/
 ├── src/
 │   ├── Sources/
 │   │   ├── CursorTokenImporter.swift
-│   │   ├── ForkConfig.swift
+│   │   ├── AppConfig.swift
 │   │   └── Resources/cli-proxy-api-plus.version
 │   └── Package.swift
 ├── appcast.xml              # Sparkle feed (arm64); empty until you ship releases
