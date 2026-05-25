@@ -1,4 +1,4 @@
-.PHONY: build app install clean run help fetch-cliproxy icon
+.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits
 
 icon: ## Regenerate AppIcon.icns from icon.png (use: make icon BADGE=1 to add + badge first)
 	@chmod +x scripts/generate-app-icon.sh scripts/badge-app-icon.swift
@@ -23,6 +23,10 @@ release: ## Build the Swift executable (release)
 fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
 	@chmod +x scripts/fetch-cliproxy-plus.sh
 	@./scripts/fetch-cliproxy-plus.sh
+
+changelog-commits: ## Export commits since last v10.* tag for AI changelog (see -o)
+	@chmod +x scripts/collect-unreleased-commits.sh
+	@./scripts/collect-unreleased-commits.sh
 
 app: fetch-cliproxy ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."

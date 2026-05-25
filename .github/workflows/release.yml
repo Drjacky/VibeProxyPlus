@@ -301,6 +301,11 @@ jobs:
             echo "publish_release=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Checkout (for CHANGELOG.md)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.tag_name }}
+
       - name: Create or update GitHub Release and upload assets
         env:
           GH_TOKEN: ${{ secrets.AUTO_UPDATE_TOKEN }}
@@ -317,30 +322,13 @@ jobs:
           fi
           gh auth status
 
-          cat > release-notes.md <<EOF
-          ## VibeProxyPlus — ${{ github.repository }}
-
-          Built by GitHub Actions. Includes **Cursor provider** support (CLIProxyAPIPlus).
-
-          ### Code signing (read the filename)
-
-          | Suffix | Meaning |
-          |--------|---------|
-          | \`-unsigned\` | Ad-hoc only — **Right-click → Open** on first launch. |
-          | \`-signed\` | Apple Developer ID (if signing secrets were set). |
-
-          **Assets:** ${FILE_LIST}
-
-          ### Install
-
-          1. Download \`*-arm64-*\` ZIP for Apple Silicon.
-          2. Extract and move \`VibeProxyPlus.app\` to **Applications**.
-          3. For \`*-unsigned*\`: **right-click** → **Open** → **Open**.
-
-          ### Verify checksum
-
-          \`shasum -a 256 -c VibeProxyPlus-arm64-unsigned.zip.sha256\`
-          EOF
+          chmod +x scripts/release-notes-from-changelog.sh
+          if ! ./scripts/release-notes-from-changelog.sh "${VERSION}" --assets "${FILE_LIST}" > release-notes.md; then
+            echo "CHANGELOG.md has no section for ${VERSION}. Add it locally:" >&2
+            echo "  ./scripts/collect-unreleased-commits.sh -o /tmp/commits.md" >&2
+            echo "  (use AI to write ## [${VERSION}] in CHANGELOG.md, commit, re-run release)" >&2
+            exit 1
+          fi
 
           DRAFT_ARGS=()
           if [ "$DRAFT" = "true" ]; then
