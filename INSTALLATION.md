@@ -2,7 +2,10 @@
 
 **VibeProxyPlus** builds are published on [GitHub Releases](https://github.com/Drjacky/vibeproxyplus/releases) (unsigned unless signed in CI).
 
-**Requirements:** macOS 13+ on **Apple Silicon** (M1/M2/M3/M4). Intel ZIPs may appear in releases but are best-effort.
+**Requirements:** macOS 13 or later.
+
+- **Apple Silicon (recommended):** M1 and newer (including M5). Use `VibeProxyPlus-arm64-*.zip`.
+- **Intel Macs:** `VibeProxyPlus-x86_64-*.zip` when published; not tested on every release.
 
 ## Option 1: Download from GitHub Releases (recommended)
 

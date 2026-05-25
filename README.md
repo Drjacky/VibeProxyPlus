@@ -61,7 +61,10 @@ VibeProxyPlus connects the AI subscriptions you already pay for to a single loca
 
 ## Installation
 
-**Requirements:** macOS 13+ on Apple Silicon (M1/M2/M3/M4). Intel ZIPs may be published but are best-effort.
+**Requirements:** macOS 13 or later.
+
+- **Apple Silicon (recommended):** any Mac with Apple silicon (M1 and newer, including M5). Download `VibeProxyPlus-arm64-*.zip`.
+- **Intel Macs:** an `x86_64` build may be attached to releases when CI produces it. Those builds are not tested on every release; use Apple Silicon if you can.
 
 ### Download from GitHub Releases (recommended)
 
