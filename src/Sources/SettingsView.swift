@@ -793,10 +793,12 @@ struct SettingsView: View {
 
             // Footer
             VStack(spacing: 4) {
+                Text("VibeProxyPlus \(appVersion) was made possible thanks to")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+
                 HStack(spacing: 4) {
-                    Text("VibeProxyPlus \(appVersion) was made possible thanks to")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                     Link("VibeProxy", destination: URL(string: "https://github.com/automazeio/vibeproxy")!)
                         .font(.caption)
                         .underline()
@@ -814,13 +816,11 @@ struct SettingsView: View {
                         .onHover { inside in
                             if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                         }
-                    Text("|")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("License: MIT")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
+
+                Text("License: MIT")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
                 HStack(spacing: 4) {
                     Text("© 2026")
@@ -842,6 +842,7 @@ struct SettingsView: View {
                         if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                     }
             }
+            .frame(maxWidth: .infinity)
             .padding(.bottom, 12)
         }
         .frame(width: 480, height: 740)
