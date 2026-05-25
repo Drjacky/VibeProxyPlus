@@ -118,13 +118,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # arm64 only for now. x86_64 cross-build on Apple Silicon runners is flaky
+        # (setup-swift / SDKSettings.plist). Re-add when Intel CI is validated.
         include:
           - arch: arm64
             cliproxy_asset_regex: darwin_(aarch64|arm64)
             swift_arch: arm64
-          - arch: x86_64
-            cliproxy_asset_regex: darwin_amd64
-            swift_arch: x86_64
 
     steps:
       - name: Checkout code
@@ -250,7 +249,13 @@ jobs:
   release:
     name: Upload to GitHub Release
     needs: [resolve, get-cliproxy-version, build]
-    if: needs.resolve.outputs.should_run == 'true'
+    # Run when at least one matrix leg succeeded (do not skip upload if another arch failed).
+    if: >-
+      always() &&
+      needs.resolve.outputs.should_run == 'true' &&
+      needs.get-cliproxy-version.result == 'success' &&
+      needs.build.result != 'cancelled' &&
+      contains(fromJSON('["success","failure"]'), needs.build.result)
     runs-on: ubuntu-latest
 
     steps:
@@ -264,7 +269,13 @@ jobs:
       - name: Prepare release assets and signing summary
         id: summary
         run: |
+          set -e
           mkdir -p release
+          if [ ! -d artifacts ] || [ -z "$(find artifacts -type f \( -name '*.zip' -o -name '*.dmg' -o -name '*.sha256' \) -print -quit 2>/dev/null)" ]; then
+            echo "No build artifacts found. At least one build (arm64) must succeed before release upload." >&2
+            find artifacts -type f 2>/dev/null || true
+            exit 1
+          fi
           find artifacts -type f \( -name '*.zip' -o -name '*.dmg' -o -name '*.sha256' \) -exec cp {} release/ \;
           ls -la release/
           test "$(ls -1 release/*.zip 2>/dev/null | wc -l)" -gt 0
@@ -317,7 +328,7 @@ jobs:
 
             ### Install
 
-            1. Download the ZIP for your Mac (`*-arm64-*` or `*-x86_64-*`).
+            1. Download the ZIP for your Mac (`*-arm64-*`; Intel builds not in CI yet).
             2. Extract and move `VibeProxyPlus.app` to **Applications**.
             3. For `*-unsigned*` builds: **right-click** → **Open** → confirm **Open**.
 
