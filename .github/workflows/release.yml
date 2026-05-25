@@ -5,10 +5,14 @@ name: Build and Release
 # Triggers:
 #   1. workflow_dispatch — Actions → "Build and Release" → set version, optional draft/publish
 #   2. release created (draft) — Releases → Draft new release with tag v* → CI builds and uploads assets
+#   3. push tag v* — git push origin v10.8.163 (builds as draft release)
 #
-# Pushing to main does NOT release. Pushing a v* tag alone does NOT release (use draft or manual run).
+# Pushing to main does NOT release. Auto-release pushes v10.* tags after CLIProxy bumps.
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -63,6 +67,11 @@ jobs:
               echo "Skipping: release was created as published (not a draft). Use draft releases to trigger builds."
               SHOULD_RUN=false
             fi
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+            DRAFT=true
+            PUBLISH=false
           else
             echo "Unsupported event: ${{ github.event_name }}"
             SHOULD_RUN=false
