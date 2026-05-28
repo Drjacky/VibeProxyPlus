@@ -14,6 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sync VERSION into Info.plist
+        run: |
+          chmod +x scripts/sync-app-version.sh scripts/app-version.sh
+          ./scripts/sync-app-version.sh
+
       - name: Set up Swift
         uses: swift-actions/setup-swift@v2
         with:

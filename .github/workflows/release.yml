@@ -5,7 +5,7 @@ name: Build and Release
 # Triggers:
 #   1. workflow_dispatch — Actions → "Build and Release" → set version, optional draft/publish
 #   2. release created (draft) — Releases → Draft new release with tag v* → CI builds and uploads assets
-#   3. push tag v* — git push origin v10.8.163 (builds as draft release)
+#   3. push tag v* — must match repo-root VERSION (e.g. v10.8.162)
 #
 # Pushing to main does NOT release. Auto-release pushes v10.* tags after CLIProxy bumps.
 #
@@ -19,8 +19,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'App version (e.g. 10.8.162). Tag will be v<version>.'
-        required: true
+        description: 'Optional override; must match VERSION file if set. Default: VERSION file.'
+        required: false
       draft:
         description: 'Save as draft release on GitHub'
         type: boolean
@@ -52,6 +52,11 @@ jobs:
       publish: ${{ steps.meta.outputs.publish }}
       should_run: ${{ steps.meta.outputs.should_run }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Resolve version and tag
         id: meta
         run: |
@@ -59,11 +64,20 @@ jobs:
           SHOULD_RUN=true
           DRAFT=true
           PUBLISH=false
+          TAG=""
+          source scripts/app-version.sh
+          FILE_VERSION=$(read_app_version)
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
             DRAFT="${{ github.event.inputs.draft }}"
             PUBLISH="${{ github.event.inputs.publish }}"
+            if [ -z "$VERSION" ]; then
+              VERSION="$FILE_VERSION"
+            elif [ "$VERSION" != "$FILE_VERSION" ]; then
+              echo "workflow version ($VERSION) != VERSION file ($FILE_VERSION). Update VERSION or omit input." >&2
+              exit 1
+            fi
           elif [ "${{ github.event_name }}" = "release" ]; then
             TAG="${{ github.event.release.tag_name }}"
             VERSION="${TAG#v}"
@@ -83,8 +97,9 @@ jobs:
           fi
 
           if [ "$SHOULD_RUN" = "true" ]; then
-            if [ -z "$VERSION" ]; then
-              echo "Version is empty" >&2
+            if [ "$VERSION" != "$FILE_VERSION" ]; then
+              echo "Resolved version ($VERSION) != VERSION file ($FILE_VERSION)." >&2
+              echo "Bump VERSION at repo root, commit, then tag v${FILE_VERSION}." >&2
               exit 1
             fi
             TAG_NAME="v${VERSION}"
@@ -142,11 +157,17 @@ jobs:
         with:
           swift-version: "5.9"
 
+      - name: Sync VERSION into Info.plist
+        run: |
+          chmod +x scripts/sync-app-version.sh scripts/app-version.sh
+          ./scripts/sync-app-version.sh
+
       - name: Resolve app version
         id: app_version
         run: |
-          VERSION="${{ needs.resolve.outputs.version }}"
-          BUILD_NUMBER=$(git rev-list --count HEAD)
+          source scripts/app-version.sh
+          VERSION=$(read_app_version)
+          BUILD_NUMBER=$(read_app_build_number)
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
 

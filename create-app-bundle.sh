@@ -11,6 +11,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/app-version.sh
+source "${PROJECT_DIR}/scripts/app-version.sh"
 SRC_DIR="$PROJECT_DIR/src"
 APP_NAME="VibeProxyPlus"
 BUNDLE_ID="com.github.drjacky"
@@ -104,17 +106,9 @@ fi
 echo -e "${BLUE}Copying Info.plist...${NC}"
 cp "$SRC_DIR/Info.plist" "$APP_DIR/Contents/"
 
-VERSION="${APP_VERSION:-}"
-if [ -z "$VERSION" ]; then
-    GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
-    if [ -n "$GIT_TAG" ]; then
-        VERSION="${GIT_TAG#v}"
-    else
-        VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$SRC_DIR/Info.plist")
-    fi
-fi
-
-BUILD_NUMBER="${APP_BUILD_NUMBER:-$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$SRC_DIR/Info.plist")}"
+VERSION="${APP_VERSION:-$(read_app_version)}"
+BUILD_NUMBER="${APP_BUILD_NUMBER:-$(read_app_build_number)}"
+sync_info_plist "$VERSION" "$BUILD_NUMBER"
 
 echo -e "${BLUE}Setting version to: ${VERSION} (build ${BUILD_NUMBER})${NC}"
 

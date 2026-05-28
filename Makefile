@@ -1,4 +1,4 @@
-.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits
+.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits sync-version version
 
 icon: ## Regenerate AppIcon.icns from icon.png (use: make icon BADGE=1 to add + badge first)
 	@chmod +x scripts/generate-app-icon.sh scripts/badge-app-icon.swift
@@ -28,7 +28,14 @@ changelog-commits: ## Export commits since last v10.* tag for AI changelog (see 
 	@chmod +x scripts/collect-unreleased-commits.sh
 	@./scripts/collect-unreleased-commits.sh
 
-app: fetch-cliproxy ## Create the .app bundle
+sync-version: ## Copy VERSION -> src/Info.plist
+	@chmod +x scripts/sync-app-version.sh scripts/app-version.sh
+	@./scripts/sync-app-version.sh
+
+version: ## Print app version from VERSION file
+	@tr -d '[:space:]' < VERSION && echo
+
+app: sync-version fetch-cliproxy ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
 	@./create-app-bundle.sh
 	@echo "✅ App bundle created: VibeProxyPlus.app"

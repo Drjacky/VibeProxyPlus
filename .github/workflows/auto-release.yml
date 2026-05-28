@@ -84,17 +84,8 @@ jobs:
         run: |
           set -e
           
-          # Only v10.* tags count as app releases (ignore upstream-style v1.* tags if any)
-          CURRENT_TAG=$(git tag -l 'v10.*' --sort=-v:refname | head -n 1 || true)
-          if [ -n "$CURRENT_TAG" ]; then
-            CURRENT_VERSION="${CURRENT_TAG#v}"
-          else
-            CURRENT_VERSION=$(awk '/CFBundleShortVersionString/{getline; gsub(/.*<string>|<\/string>.*/,""); print; exit}' src/Info.plist)
-          fi
-          
-          if [ -z "$CURRENT_VERSION" ]; then
-            CURRENT_VERSION="10.8.162"
-          fi
+          source scripts/app-version.sh
+          CURRENT_VERSION=$(read_app_version)
           
           echo "Current VibeProxyPlus version: $CURRENT_VERSION"
           
@@ -114,7 +105,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Update CHANGELOG.md and Info.plist
+      - name: Update CHANGELOG.md and VERSION
         if: steps.check-pr.outputs.has_pr == 'true'
         env:
           CLIPROXY_VERSION: ${{ steps.check-pr.outputs.cliproxy_version }}
@@ -123,6 +114,7 @@ jobs:
           PR_NUMBER: ${{ steps.check-pr.outputs.pr_number }}
         run: |
           set -e
+          source scripts/app-version.sh
           
           TODAY=$(date +%Y-%m-%d)
           REPO="${{ github.repository }}"
@@ -141,13 +133,12 @@ jobs:
           sed -i.bak "0,/^\[.*\]: https:\\/\\/github.com\\/.*\\/releases\\/tag\\/v/s||${LINK_LINE}\n&|" CHANGELOG.md
           rm -f CHANGELOG.md.bak
           
-          sed -i.bak "/CFBundleShortVersionString/,+1 s|<string>.*</string>|<string>${NEW_VERSION}</string>|" src/Info.plist
-          sed -i.bak "/CFBundleVersion/,+1 s|<string>.*</string>|<string>${BUILD_NUMBER}</string>|" src/Info.plist
-          rm -f src/Info.plist.bak
+          printf '%s\n' "${NEW_VERSION}" > VERSION
+          APP_BUILD_NUMBER="${BUILD_NUMBER}" sync_info_plist "${NEW_VERSION}" "${BUILD_NUMBER}"
           
-          echo "CHANGELOG.md and src/Info.plist updated"
+          echo "CHANGELOG.md and VERSION updated"
           head -n 20 CHANGELOG.md
-          grep -A1 'CFBundleShortVersionString\|CFBundleVersion' src/Info.plist
+          cat VERSION
 
       - name: Commit, tag, and push
         if: steps.check-pr.outputs.has_pr == 'true'
@@ -160,7 +151,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add CHANGELOG.md src/Info.plist
+          git add CHANGELOG.md VERSION src/Info.plist
           git commit -m "Release v${NEW_VERSION} (CLIProxyAPIPlus bump)"
           
           git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"

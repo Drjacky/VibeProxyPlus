@@ -138,7 +138,7 @@ cd src && swift test
 
 The ~50MB `cli-proxy-api-plus` binary is **not in git** (fetched at build time). See `scripts/fetch-cliproxy-plus.sh` and `cli-proxy-api-plus.version`.
 
-App version: edit `src/Info.plist` (`CFBundleShortVersionString` and `CFBundleVersion`), or pass `APP_VERSION` when building.
+App version: edit **`VERSION`** at the repo root, then `make sync-version` (updates `src/Info.plist`). The app UI reads the bundle version at runtime.
 
 ---
 
@@ -154,18 +154,18 @@ App version: edit `src/Info.plist` (`CFBundleShortVersionString` and `CFBundleVe
 ### Option A: Draft release on GitHub (recommended)
 
 1. **Releases** → **Draft a new release**
-2. Create tag `v10.8.163` (or your version) on the commit you want
+2. Create tag `v<version>` matching `VERSION` (e.g. `v10.8.162`) on the commit you want
 3. Leave **Set as a pre-release** off, keep **This is a draft release** checked
 4. Click **Save draft** (do not publish yet)
 5. **Actions** runs **Build and Release** automatically and uploads ZIP/DMG to that draft
 6. Review assets on the draft, then **Publish release** when ready
 
-Use tag names like `v10.8.162` (must start with `v`).
+Use tag names like `v10.8.162` (must match `VERSION` and start with `v`).
 
 ### Option B: Run workflow manually
 
 1. **Actions** → **Build and Release** → **Run workflow**
-2. **version:** e.g. `10.8.163` (no `v` prefix)
+2. **version:** leave empty to use `VERSION` file
 3. **draft:** `true` to keep a draft on GitHub (default)
 4. **publish:** `true` only if `draft` is `false` and you want it live immediately
 
