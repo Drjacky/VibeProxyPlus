@@ -10,6 +10,10 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 - Cursor tokens are no longer imported automatically. Importing now happens only when you press **Add Account** or **Fetch Auth Locally**, so deleting `cursor.json` (via the menu or manually) stays deleted across app restarts.
 
+### Fixed
+
+- `make app` now builds locally without `TARGET_ARCH` set and without a Developer ID certificate.
+
 ## [10.8.162] - 2026-05-24
 
 ### Added

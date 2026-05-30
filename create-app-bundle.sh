@@ -30,7 +30,7 @@ fi
 # Build the Swift executable first
 echo -e "${BLUE}Building Swift executable (release)...${NC}"
 cd "$SRC_DIR"
-if [ -n "$TARGET_ARCH" ]; then
+if [ -n "${TARGET_ARCH:-}" ]; then
     echo "Building for architecture: $TARGET_ARCH"
     swift build -c release --arch "$TARGET_ARCH"
 else
@@ -136,7 +136,7 @@ echo -n "APPL????" > "$APP_DIR/Contents/PkgInfo"
 echo -e "${BLUE}Signing app...${NC}"
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 if [ -z "$CODESIGN_IDENTITY" ]; then
-    CODESIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/')
+    CODESIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/' || true)
 fi
 
 if [ -n "$CODESIGN_IDENTITY" ]; then
