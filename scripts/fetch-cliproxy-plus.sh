@@ -21,50 +21,27 @@ github_api() {
   fi
 }
 
-release_tag_exists() {
-  local tag="$1"
+normalize_tag() {
+  local t="$1"
+  if [[ "$t" == v* ]]; then echo "$t"; else echo "v$t"; fi
+}
+
+# Latest non-draft release tag (includes prereleases, ordered newest first).
+latest_release_tag() {
   if command -v gh >/dev/null 2>&1 && [ -n "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]; then
-    gh release view "$tag" --repo "$REPO" >/dev/null 2>&1
-    return $?
+    gh release list --repo "$REPO" --limit 1 --exclude-drafts --json tagName \
+      --jq '.[0].tagName' 2>/dev/null && return 0
   fi
-  github_api "${GITHUB_API}/releases/tags/${tag}" >/dev/null
+  github_api "${GITHUB_API}/releases" | jq -r '[.[] | select(.draft == false)][0].tag_name'
 }
 
-need_binary() {
-  if [ ! -f "$TARGET_FILE" ] || [ ! -s "$TARGET_FILE" ]; then
-    return 0
-  fi
-  if head -1 "$TARGET_FILE" 2>/dev/null | grep -q 'git-lfs'; then
-    return 0
-  fi
-  return 1
+installed_version() {
+  [ -f "$VERSION_FILE" ] && tr -d '[:space:]' < "$VERSION_FILE" || echo ""
 }
 
-if ! need_binary && [ "${FORCE_FETCH_CLIPROXY:-0}" != "1" ]; then
-  echo "cli-proxy-api-plus already present ($(wc -c < "$TARGET_FILE" | tr -d ' ') bytes)"
-  exit 0
-fi
-
-resolve_tag_candidates() {
-  if [ -n "${CLIPROXY_TAG:-}" ]; then
-    if [[ "${CLIPROXY_TAG}" == v* ]]; then echo "${CLIPROXY_TAG}"; else echo "v${CLIPROXY_TAG}"; fi
-    return
-  fi
-  if [ -f "$VERSION_FILE" ]; then
-    local v
-    v=$(tr -d '[:space:]' < "$VERSION_FILE")
-    if [[ "$v" == v* ]]; then
-      echo "$v"
-      echo "${v}-0"
-      echo "${v}-1"
-    else
-      echo "v${v}"
-      echo "v${v}-0"
-      echo "v${v}-1"
-    fi
-    return
-  fi
-  github_api "${GITHUB_API}/releases/latest" | jq -r .tag_name
+binary_present() {
+  [ -f "$TARGET_FILE" ] && [ -s "$TARGET_FILE" ] \
+    && ! head -1 "$TARGET_FILE" 2>/dev/null | grep -q 'git-lfs'
 }
 
 case "$ARCH" in
@@ -76,25 +53,34 @@ case "$ARCH" in
     ;;
 esac
 
-TAG=""
-while IFS= read -r candidate; do
-  [ -z "$candidate" ] && continue
-  if release_tag_exists "$candidate"; then
-    TAG="$candidate"
-    break
-  fi
-done < <(resolve_tag_candidates | awk '!seen[$0]++')
+# Resolve the target tag: explicit pin via CLIPROXY_TAG, otherwise latest upstream release.
+if [ -n "${CLIPROXY_TAG:-}" ]; then
+  TAG="$(normalize_tag "$CLIPROXY_TAG")"
+else
+  TAG="$(latest_release_tag || true)"
+fi
 
-if [ -z "$TAG" ]; then
-  echo "Could not resolve a CLIProxyAPIPlus release tag (check ${VERSION_FILE})" >&2
-  if [ -f "$VERSION_FILE" ]; then
-    echo "Pinned version: $(tr -d '[:space:]' < "$VERSION_FILE")" >&2
+if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then
+  # Network/API lookup failed. Keep an existing binary; only error if we have nothing.
+  if binary_present; then
+    echo "Could not resolve latest CLIProxyAPIPlus tag; keeping installed version $(installed_version)" >&2
+    exit 0
   fi
-  echo "Tried: $(resolve_tag_candidates | tr '\n' ' ')" >&2
+  echo "Could not resolve a CLIProxyAPIPlus release tag from ${REPO}." >&2
   if [ -z "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]; then
     echo "Hint: set GH_TOKEN for GitHub API (required in CI)." >&2
   fi
   exit 1
+fi
+
+TARGET_VERSION="${TAG#v}"
+
+# Skip download when the installed binary already matches the target tag (unless forced).
+if [ "${FORCE_FETCH_CLIPROXY:-0}" != "1" ] \
+   && binary_present \
+   && [ "$(installed_version)" = "$TARGET_VERSION" ]; then
+  echo "cli-proxy-api-plus ${TARGET_VERSION} already present ($(wc -c < "$TARGET_FILE" | tr -d ' ') bytes)"
+  exit 0
 fi
 
 echo "Fetching CLIProxyAPIPlus ${TAG} for ${ARCH}..."
