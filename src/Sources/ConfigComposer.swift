@@ -8,7 +8,10 @@ struct ConfigProviderAuthRecord: Equatable {
 
 enum ConfigComposer {
     static let uiMetadataKeys: Set<String> = ["display-name", "help-text", "icon-system"]
-    static let runtimeEditableTopLevelKeys: Set<String> = ["api-keys"]
+    /// Top-level keys the composer actively derives from provider toggles and auth state.
+    /// These must never be carried over from a previous merged-config, otherwise stale
+    /// values (e.g. oauth-excluded-models from a now-enabled provider) would be reapplied.
+    static let composerManagedTopLevelKeys: Set<String> = ["openai-compatibility", "oauth-excluded-models"]
     
     static func composeAdditiveBaseConfig(bundledRoot: [String: Any], userRoot: [String: Any]?) -> [String: Any] {
         guard let userRoot else {
@@ -17,21 +20,29 @@ enum ConfigComposer {
         return mergeDictionary(bundledRoot, overlaidWith: userRoot)
     }
 
-    static func preservingRuntimeEditableTopLevelKeys(
-        in root: [String: Any],
-        from runtimeRoot: [String: Any]?
+    /// Produces the config to persist by treating the previously written runtime config
+    /// (`runtimeRoot`, i.e. the existing merged-config.yaml) as the source of truth for all
+    /// user-authored content, while overlaying the freshly composed values for the keys the
+    /// app owns based on provider toggles and stored credentials.
+    ///
+    /// Every key the user added or edited in merged-config.yaml is preserved untouched,
+    /// except `composerManagedTopLevelKeys`, which are replaced by `composedRoot`'s values
+    /// (and removed when `composedRoot` omits them). This keeps custom settings/secrets
+    /// stable across restarts while leaving provider enable/disable and API-key features
+    /// fully functional.
+    static func overlayManagedKeys(
+        onto runtimeRoot: [String: Any],
+        from composedRoot: [String: Any]
     ) -> [String: Any] {
-        guard let runtimeRoot else {
-            return root
-        }
-
-        var mergedRoot = root
-        for key in runtimeEditableTopLevelKeys where mergedRoot[key] == nil {
-            if let runtimeValue = runtimeRoot[key] {
-                mergedRoot[key] = runtimeValue
+        var result = runtimeRoot
+        for key in composerManagedTopLevelKeys {
+            if let value = composedRoot[key] {
+                result[key] = value
+            } else {
+                result.removeValue(forKey: key)
             }
         }
-        return mergedRoot
+        return result
     }
     
     static func parseCustomProviders(

@@ -725,6 +725,52 @@ class ServerManager: ObservableObject {
         requestConfigUpdate()
     }
 
+    /// Discards any user edits in merged-config.yaml and regenerates it from the bundled config,
+    /// the user config.yaml, current provider toggles, and stored credentials. Restarts the
+    /// server if it is running so the freshly composed config takes effect.
+    func resetMergedConfig(completion: ((Bool, String) -> Void)? = nil) {
+        let finish: (Bool, String) -> Void = { success, message in
+            DispatchQueue.main.async { completion?(success, message) }
+        }
+
+        let mergedConfigPath = authDirectoryURL()
+            .appendingPathComponent(CustomProviderConstants.mergedConfigFilename)
+
+        do {
+            if FileManager.default.fileExists(atPath: mergedConfigPath.path) {
+                try FileManager.default.removeItem(at: mergedConfigPath)
+            }
+        } catch {
+            addLog("❌ Failed to reset merged config: \(error.localizedDescription)")
+            finish(false, "Failed to reset config: \(error.localizedDescription)")
+            return
+        }
+
+        addLog("⚠️ Reset merged-config.yaml to defaults")
+
+        // Regenerate from scratch (file is gone, so the full composed config is written verbatim).
+        switch resolveConfigPath() {
+        case .success(let path):
+            clearConfigError()
+            if isRunning {
+                addLog("Restarting server with reset config")
+                stop { [weak self] in
+                    self?.start { started in
+                        finish(true, started
+                            ? "Configuration reset to defaults. Server restarted."
+                            : "Configuration reset to defaults, but the server failed to restart.")
+                    }
+                }
+            } else {
+                finish(true, "Configuration reset to defaults.")
+            }
+            _ = path
+        case .failure(let error):
+            publishConfigError(error.message)
+            finish(false, error.message)
+        }
+    }
+
     func handleObservedConfigInputsChanged() {
         guard markObservedConfigInputsChanged() else {
             return
@@ -874,11 +920,16 @@ class ServerManager: ObservableObject {
         )
         
         let mergedConfigPath = authDir.appendingPathComponent(CustomProviderConstants.mergedConfigFilename)
-        if mergedRoot["api-keys"] == nil,
-           case .success(let existingRuntimeRoot) = loadYAMLDictionary(atPath: mergedConfigPath.path) {
-            mergedRoot = ConfigComposer.preservingRuntimeEditableTopLevelKeys(
-                in: mergedRoot,
-                from: existingRuntimeRoot
+        // After the first run, treat the existing merged-config.yaml as the source of truth for
+        // all user-authored content and only overlay the keys the app owns (provider toggles and
+        // stored API keys). This keeps custom settings/secrets stable across restarts. The fully
+        // composed config is only written verbatim on first run or after an explicit reset.
+        if FileManager.default.fileExists(atPath: mergedConfigPath.path),
+           case .success(let existingRuntimeRoot) = loadYAMLDictionary(atPath: mergedConfigPath.path),
+           !existingRuntimeRoot.isEmpty {
+            mergedRoot = ConfigComposer.overlayManagedKeys(
+                onto: existingRuntimeRoot,
+                from: mergedRoot
             )
         }
 

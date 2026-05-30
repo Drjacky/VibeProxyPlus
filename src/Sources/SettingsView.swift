@@ -527,6 +527,8 @@ struct SettingsView: View {
     @State private var showingAuthResult = false
     @State private var authResultMessage = ""
     @State private var authResultSuccess = false
+    @State private var showingResetConfigConfirmation = false
+    @State private var isResettingConfig = false
     @State private var showingQwenEmailPrompt = false
     @State private var qwenEmail = ""
     @State private var showingZaiApiKeyPrompt = false
@@ -588,6 +590,24 @@ struct SettingsView: View {
                         Spacer()
                         Button("Open Folder") {
                             openAuthFolder()
+                        }
+                    }
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Proxy config")
+                            Text("Reset merged-config.yaml to defaults")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if isResettingConfig {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Button("Reset Config") {
+                                showingResetConfigConfirmation = true
+                            }
                         }
                     }
                 }
@@ -936,6 +956,14 @@ struct SettingsView: View {
         } message: {
             Text(authResultMessage)
         }
+        .alert("Reset Proxy Config?", isPresented: $showingResetConfigConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive) {
+                resetProxyConfig()
+            }
+        } message: {
+            Text("This rebuilds ~/.cli-proxy-api/merged-config.yaml from the bundled defaults, your config.yaml, your enabled providers, and your stored API keys.\n\nAny manual edits you made directly to merged-config.yaml (custom settings, secrets, or values added via the management dashboard) will be permanently lost. Your connected accounts and saved API keys are not affected.\n\nIf the server is running, it will restart.")
+        }
     }
 
     // MARK: - Actions
@@ -958,6 +986,16 @@ struct SettingsView: View {
     private func openAuthFolder() {
         let authDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api")
         NSWorkspace.shared.open(authDir)
+    }
+
+    private func resetProxyConfig() {
+        isResettingConfig = true
+        serverManager.resetMergedConfig { success, message in
+            self.isResettingConfig = false
+            self.authResultSuccess = success
+            self.authResultMessage = success ? "✓ \(message)" : message
+            self.showingAuthResult = true
+        }
     }
 
     private func toggleLaunchAtLogin(_ enabled: Bool) {
@@ -1207,3 +1245,6 @@ struct SettingsView: View {
         }
     }
 }
+
+
+

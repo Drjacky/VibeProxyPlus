@@ -36,9 +36,6 @@ src/Sources/Resources/AppIcon.iconset/
 # Bundled backend (~50MB) — fetched by scripts/fetch-cliproxy-plus.sh
 src/Sources/Resources/cli-proxy-api-plus
 
-# Local CLIProxyAPIPlus download scratch dir
-.tmp-cliproxy-download/
-
 # Logs
 *.log
 test-notarization.sh
