@@ -280,6 +280,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout (for CHANGELOG.md)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.tag_name }}
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -321,11 +326,6 @@ jobs:
           else
             echo "publish_release=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Checkout (for CHANGELOG.md)
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.tag_name }}
 
       - name: Create or update GitHub Release and upload assets
         env:
