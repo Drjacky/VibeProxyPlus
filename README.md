@@ -48,7 +48,7 @@ VibeProxyPlus connects the AI subscriptions you already pay for to a single loca
 - Start/stop from the menu bar or Settings; credentials stored in `~/.cli-proxy-api/`
 - **OAuth:** Claude Code, Codex (ChatGPT), Gemini, Kimi, Qwen, Antigravity, GitHub Copilot, Cursor
 - **API key:** Z.AI GLM (and custom providers via `openai-compatibility` in config)
-- **Cursor:** browser login (PKCE) or **Fetch Auth Locally** from Cursor IDE `state.vscdb`, with optional auto-import when tokens change
+- **Cursor:** browser login (PKCE) or **Fetch Auth Locally** from Cursor IDE `state.vscdb`; tokens are imported only when you press **Add Account** or **Fetch Auth Locally**
 - **Custom providers:** add OpenAI-compatible endpoints from `config.yaml` (display name, models, API keys in app or config)
 - **Multi-account** per provider: round-robin, failover, and per-account enable/disable
 - **Provider toggles** in Settings with hot reload (no restart required)
