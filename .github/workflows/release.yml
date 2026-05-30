@@ -314,9 +314,6 @@ jobs:
           echo "has_unsigned=${HAS_UNSIGNED}" >> $GITHUB_OUTPUT
           echo "has_signed=${HAS_SIGNED}" >> $GITHUB_OUTPUT
 
-          FILE_LIST=$(ls -1 release/*.zip release/*.dmg 2>/dev/null | xargs -I{} basename {} | paste -sd ',' -)
-          echo "file_list=${FILE_LIST}" >> $GITHUB_OUTPUT
-
           DRAFT="${{ needs.resolve.outputs.draft }}"
           PUBLISH="${{ needs.resolve.outputs.publish }}"
           if [ "$DRAFT" = "true" ]; then
@@ -333,7 +330,6 @@ jobs:
           TAG: ${{ needs.resolve.outputs.tag_name }}
           VERSION: ${{ needs.resolve.outputs.version }}
           DRAFT: ${{ needs.resolve.outputs.draft }}
-          FILE_LIST: ${{ steps.summary.outputs.file_list }}
           PUBLISH: ${{ steps.summary.outputs.publish_release }}
         run: |
           set -e
@@ -344,7 +340,7 @@ jobs:
           gh auth status
 
           chmod +x scripts/release-notes-from-changelog.sh
-          if ! ./scripts/release-notes-from-changelog.sh "${VERSION}" --assets "${FILE_LIST}" > release-notes.md; then
+          if ! ./scripts/release-notes-from-changelog.sh "${VERSION}" > release-notes.md; then
             echo "CHANGELOG.md has no section for ${VERSION}. Add it locally:" >&2
             echo "  ./scripts/collect-unreleased-commits.sh -o /tmp/commits.md" >&2
             echo "  (use AI to write ## [${VERSION}] in CHANGELOG.md, commit, re-run release)" >&2
@@ -359,12 +355,12 @@ jobs:
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             echo "Updating existing release $TAG"
             gh release edit "$TAG" --repo "${{ github.repository }}" \
-              --title "VibeProxyPlus ${VERSION}" \
+              --title "${VERSION}" \
               --notes-file release-notes.md \
               "${DRAFT_ARGS[@]}"
           else
             gh release create "$TAG" --repo "${{ github.repository }}" \
-              --title "VibeProxyPlus ${VERSION}" \
+              --title "${VERSION}" \
               --notes-file release-notes.md \
               "${DRAFT_ARGS[@]}"
           fi

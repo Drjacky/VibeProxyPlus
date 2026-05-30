@@ -1,6 +1,7 @@
 name: Auto Release
 
-# After Update CLIProxyAPI opens a bump PR: merge it, bump VibeProxyPlus 10.x.y, tag, push.
+# After Update CLIProxyAPI opens a bump PR: merge it, bump 
+  10.x.y, tag, push.
 # Tag push triggers Build and Release (draft). Pushes to main alone do not run this workflow.
 
 on:
