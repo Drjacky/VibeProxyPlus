@@ -52,6 +52,8 @@ VibeProxyPlus connects the AI subscriptions you already pay for to a single loca
 - **Custom providers:** add OpenAI-compatible endpoints from `config.yaml` (display name, models, API keys in app or config)
 - **Multi-account** per provider: round-robin, failover, and per-account enable/disable
 - **Provider toggles** in Settings with hot reload (no restart required)
+- **Persistent config:** after the first run, your `~/.cli-proxy-api/merged-config.yaml` is preserved across server stop/start and app restarts - manual edits and secrets are kept, and only provider toggles and stored API keys are overlaid by the app
+- **Reset Config** button in Settings (with a confirmation dialog) rebuilds `merged-config.yaml` from the bundled defaults, your `config.yaml`, enabled providers, and stored API keys; restarts the server if running
 - **Vercel AI Gateway** for Claude (optional; configure in Settings)
 - **Launch at login** toggle
 - **Check for Updates** via Sparkle (manual; automatic checks off until you configure `appcast.xml` and signing)
