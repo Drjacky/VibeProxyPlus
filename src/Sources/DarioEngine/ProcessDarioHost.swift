@@ -15,6 +15,11 @@ import Diagnostics
 ///   rather than a crash, so the UI can prompt the user to log in.
 @MainActor
 public final class ProcessDarioHost: DarioHost {
+    /// User-facing reason shown when `dario proxy` refuses to serve because no Claude account is
+    /// logged in. The engine surfaces this through `startFailureReason` so the shell notification
+    /// can direct the user to log in rather than showing a generic failure.
+    public static let notLoggedInReason = "Dario is not logged in. Open Settings and tap Login to authenticate, then start the server."
+
     public private(set) var status: DarioStatusSnapshot
     public var onStatusChange: (() -> Void)?
 
@@ -87,8 +92,8 @@ public final class ProcessDarioHost: DarioHost {
             if await process.isRunning == false {
                 let log = logStore.snapshot().joined(separator: "\n")
                 if log.contains("Not authenticated") {
-                    update(state: .stopped)
-                    status = DarioStatusSnapshot(state: .stopped, endpoint: endpoint, isLoggedIn: false, backends: status.backends)
+                    status = DarioStatusSnapshot(state: .failed(Self.notLoggedInReason), endpoint: endpoint, isLoggedIn: false, backends: status.backends)
+                    onStatusChange?()
                     logStore.append("dario is not logged in. Run Login from Dario settings.")
                     completion(false)
                     return
@@ -199,3 +204,4 @@ public final class ProcessDarioHost: DarioHost {
         onStatusChange?()
     }
 }
+

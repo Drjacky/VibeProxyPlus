@@ -68,6 +68,10 @@ public final class LogStore: @unchecked Sendable {
     private var buffer: RingBuffer<String>
     private let lock = NSLock()
     private let timestampFormatter: DateFormatter
+    /// When true, every appended line is also written to the system log (NSLog) so it appears on
+    /// the terminal / in Console.app. Enabled by setting the VIBEPROXY_DEBUG_LOG environment
+    /// variable (any non-empty value). Off by default to avoid noisy production logs.
+    private let mirrorToConsole: Bool
 
     /// Invoked on the main queue with the full current log snapshot after each append.
     public var onUpdate: (([String]) -> Void)?
@@ -82,6 +86,8 @@ public final class LogStore: @unchecked Sendable {
         formatter.dateStyle = .none
         formatter.timeStyle = .medium
         self.timestampFormatter = formatter
+        let flag = ProcessInfo.processInfo.environment["VIBEPROXY_DEBUG_LOG"]
+        self.mirrorToConsole = !(flag ?? "").isEmpty
     }
 
     /// Appends a timestamped line and notifies `onUpdate` on the main queue.
@@ -90,12 +96,17 @@ public final class LogStore: @unchecked Sendable {
     /// subprocess output never reach the in-memory buffer, the UI, or a diagnostics export.
     public func append(_ message: String) {
         let timestamp = timestampFormatter.string(from: Date())
-        let line = "[\(timestamp)] \(SecretScrubber.scrub(message))"
+        let scrubbed = SecretScrubber.scrub(message)
+        let line = "[\(timestamp)] \(scrubbed)"
 
         lock.lock()
         buffer.append(line)
         let snapshot = buffer.elements()
         lock.unlock()
+
+        if mirrorToConsole {
+            NSLog("[%@] %@", scope, scrubbed)
+        }
 
         if let onUpdate {
             DispatchQueue.main.async {

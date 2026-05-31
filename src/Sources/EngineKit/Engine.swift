@@ -66,9 +66,17 @@ public protocol Engine: AnyObject {
 
     /// The engine-specific settings/UI surface the shell hosts in its window.
     func makeSettingsView() -> AnyView
+
+    /// A user-facing explanation for the most recent failed `start`, or nil if the last start
+    /// succeeded or no specific reason is available. The shell shows this in the failure
+    /// notification so the user knows what to do (for example "log in first").
+    var startFailureReason: String? { get }
 }
 
 public extension Engine {
     /// Instance access to the static descriptor.
     var descriptor: EngineDescriptor { Self.descriptor }
+
+    /// Engines that do not provide a specific reason fall back to nil (generic failure message).
+    var startFailureReason: String? { nil }
 }

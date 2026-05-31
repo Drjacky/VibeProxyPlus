@@ -336,11 +336,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     func startServer() {
         activeEngine.start { [weak self] success in
             DispatchQueue.main.async {
+                guard let self else { return }
                 if success {
-                    self?.updateMenuBarStatus()
-                    self?.showNotification(title: "Server Started", body: "VibeProxyPlus is now running")
+                    self.updateMenuBarStatus()
+                    self.showNotification(title: "Server Started", body: "VibeProxyPlus is now running")
                 } else {
-                    self?.showNotification(title: "Server Failed", body: "Could not start the engine")
+                    self.updateMenuBarStatus()
+                    // Prefer the engine's specific reason (for example "Dario is not logged in")
+                    // over a generic failure so the user knows the next step.
+                    let body = self.activeEngine.startFailureReason ?? "Could not start the engine"
+                    self.showNotification(title: "Server Failed", body: body)
                 }
             }
         }

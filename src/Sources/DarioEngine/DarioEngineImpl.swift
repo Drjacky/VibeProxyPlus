@@ -45,6 +45,13 @@ public final class DarioEngineImpl: Engine {
 
     public var isRunning: Bool { host.status.state.isRunning }
 
+    /// Surfaces the host's last failure message (for example the not-logged-in hint) so the shell
+    /// notification can tell the user what to do.
+    public var startFailureReason: String? {
+        if case .failed(let message) = host.status.state { return message }
+        return nil
+    }
+
     public var userVisibleURL: URL { endpoint }
 
     // Dario's "dashboard" is a terminal TUI, not a web page, so there is no web dashboard to open.
