@@ -1,4 +1,4 @@
-.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits sync-version version
+.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits sync-version version check-isolation
 
 icon: ## Regenerate AppIcon.icns from icon.png (use: make icon BADGE=1 to add + badge first)
 	@chmod +x scripts/generate-app-icon.sh scripts/badge-app-icon.swift
@@ -23,6 +23,10 @@ release: ## Build the Swift executable (release)
 fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
 	@chmod +x scripts/fetch-cliproxy-plus.sh
 	@./scripts/fetch-cliproxy-plus.sh
+
+check-isolation: ## Verify engine modules stay mutually isolated (no cross-engine imports)
+	@chmod +x scripts/check-engine-isolation.sh
+	@./scripts/check-engine-isolation.sh
 
 changelog-commits: ## Export commits since last v10.* tag for AI changelog (see -o)
 	@chmod +x scripts/collect-unreleased-commits.sh
@@ -54,7 +58,7 @@ clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
 	@rm -rf src/.build
 	@rm -rf "VibeProxyPlus.app"
-	@rm -rf src/Sources/Resources/static
+	@rm -rf src/Sources/CLIProxyMenuBar/Resources/static
 	@echo "✅ Clean complete"
 
 test: ## Run a quick test build

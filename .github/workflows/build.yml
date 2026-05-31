@@ -19,6 +19,11 @@ jobs:
           chmod +x scripts/sync-app-version.sh scripts/app-version.sh
           ./scripts/sync-app-version.sh
 
+      - name: Check engine isolation
+        run: |
+          chmod +x scripts/check-engine-isolation.sh
+          ./scripts/check-engine-isolation.sh
+
       - name: Set up Swift
         uses: swift-actions/setup-swift@v2
         with:

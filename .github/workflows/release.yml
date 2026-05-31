@@ -187,7 +187,7 @@ jobs:
             exit 0
           fi
           curl -L -f --retry 3 --retry-delay 5 -o cliproxy.tar.gz "$URL"
-          mkdir -p src/Sources/Resources
+          mkdir -p src/Sources/CLIProxyMenuBar/Resources
           TEMP_DIR=$(mktemp -d)
           tar -xzf cliproxy.tar.gz -C "$TEMP_DIR"
           BINARY=$(find "$TEMP_DIR" -type f \( -name "CLIProxyAPIPlus" -o -name "cli-proxy-api-plus" \) | head -1)
@@ -195,8 +195,8 @@ jobs:
             BINARY=$(find "$TEMP_DIR" -type f -perm +111 | head -1)
           fi
           test -n "$BINARY"
-          cp "$BINARY" src/Sources/Resources/cli-proxy-api-plus
-          chmod +x src/Sources/Resources/cli-proxy-api-plus
+          cp "$BINARY" src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus
+          chmod +x src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus
 
       - name: Build app bundle
         if: steps.cliproxy.outputs.skip != 'true'

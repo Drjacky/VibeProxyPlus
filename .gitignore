@@ -26,15 +26,15 @@ VibeProxyPlus.app
 
 # Resources (copied during build)
 # cli-proxy-api binary and config are now committed to repo for releases
-# src/Sources/Resources/cli-proxy-api
-# src/Sources/Resources/config.yaml
-src/Sources/Resources/static/
+# src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api
+# src/Sources/CLIProxyMenuBar/Resources/config.yaml
+src/Sources/CLIProxyMenuBar/Resources/static/
 
 # Icon generation artifacts
-src/Sources/Resources/AppIcon.iconset/
+src/Sources/CLIProxyMenuBar/Resources/AppIcon.iconset/
 
 # Bundled backend (~50MB) — fetched by scripts/fetch-cliproxy-plus.sh
-src/Sources/Resources/cli-proxy-api-plus
+src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus
 
 # Logs
 *.log
