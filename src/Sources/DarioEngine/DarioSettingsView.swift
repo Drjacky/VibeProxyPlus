@@ -32,6 +32,13 @@ final class DarioSettingsModel: ObservableObject {
             host.start { [weak self] _ in self?.refresh() }
         }
     }
+
+    func login(completion: @escaping (Bool, String) -> Void) {
+        host.login { [weak self] success, message in
+            self?.refresh()
+            completion(success, message)
+        }
+    }
 }
 
 /// The Dario engine's settings surface (Split A).
@@ -42,9 +49,21 @@ final class DarioSettingsModel: ObservableObject {
 /// endpoints. Built natively in the DarioEngine module - no shared view models with CLIProxy.
 struct DarioSettingsView: View {
     @StateObject private var model: DarioSettingsModel
+    @State private var isLoggingIn = false
+    @State private var showingLoginResult = false
+    @State private var loginResultMessage = ""
 
     init(host: DarioHost) {
         _model = StateObject(wrappedValue: DarioSettingsModel(host: host))
+    }
+
+    private func startLogin() {
+        isLoggingIn = true
+        model.login { _, message in
+            self.isLoggingIn = false
+            self.loginResultMessage = message
+            self.showingLoginResult = true
+        }
     }
 
     var body: some View {
@@ -80,8 +99,16 @@ struct DarioSettingsView: View {
                         Spacer()
                         Text(model.status.isLoggedIn ? "Logged in" : "Not logged in")
                             .foregroundColor(model.status.isLoggedIn ? .green : .secondary)
+                        if isLoggingIn {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Button(model.status.isLoggedIn ? "Re-login" : "Login") {
+                                startLogin()
+                            }
+                            .controlSize(.small)
+                        }
                     }
-                    Text("Account login (dario login) is managed by the Dario engine and will be wired to the bundled binary in a later update.")
+                    Text("Login opens your browser to authenticate your Claude subscription. The proxy will not serve requests until you are logged in.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -126,6 +153,11 @@ struct DarioSettingsView: View {
             .formStyle(.grouped)
         }
         .frame(width: 480, height: 740)
+        .alert("Dario Login", isPresented: $showingLoginResult) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(loginResultMessage)
+        }
     }
 
     private var statusColor: Color {
@@ -146,3 +178,4 @@ struct DarioSettingsView: View {
         }
     }
 }
+

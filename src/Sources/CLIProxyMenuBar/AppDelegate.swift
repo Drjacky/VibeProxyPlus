@@ -21,6 +21,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     private var switchCoordinator: EngineSwitchCoordinator!
     /// The single active engine for this process lifetime (one engine per launch).
     private var activeEngine: Engine!
+    /// Detects whether the previous run crashed so we can offer a safe-mode boot.
+    private let crashSentinel = CrashSentinel()
+    /// When true, the engine is left stopped at boot (safe mode after a detected crash).
+    private var safeModeActive = false
 
     private let notificationCenter = UNUserNotificationCenter.current()
     private var notificationPermissionGranted = false
@@ -37,6 +41,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Detect whether the previous run terminated abnormally. A switch relaunch is an expected
+        // (clean) restart, so it is not treated as a crash.
+        let priorRunCrashed = crashSentinel.markBootStarted() && !selectionStore.isSwitchPending
+
         // Setup standard Edit menu for keyboard shortcuts (Cmd+C/V/X/A)
         setupMainMenu()
         
@@ -52,8 +60,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         
         configureNotifications()
 
-        // Start the engine automatically
-        startServer()
+        // After a detected crash, offer to boot into safe mode (engine left stopped) so the user
+        // can inspect or change settings before re-engaging a potentially crashing engine.
+        if priorRunCrashed {
+            safeModeActive = promptForSafeMode()
+        }
+
+        // Start the engine automatically unless safe mode was chosen.
+        if safeModeActive {
+            updateMenuBarStatus()
+        } else {
+            startServer()
+        }
 
         // Register for status changes from the active engine
         activeEngine.onStatusChange = { [weak self] in
@@ -119,6 +137,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     /// not currently active). With two engines this is simply "the other one".
     private var switchTargetDescriptor: EngineDescriptor? {
         registry.descriptors.first { $0.id != activeEngine.descriptor.id }
+    }
+
+    /// Shows a modal asking the user whether to boot with the engine stopped after a detected
+    /// crash. Returns true if the user chose safe mode. After 3+ consecutive crashes safe mode is
+    /// strongly recommended in the message.
+    private func promptForSafeMode() -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "VibeProxyPlus did not shut down cleanly"
+        let crashCount = crashSentinel.consecutiveCrashCount
+        if crashCount >= 3 {
+            alert.informativeText = "The app has failed to start cleanly \(crashCount) times in a row. We recommend starting in Safe Mode (engine stopped) so you can review or change your settings before starting the engine again."
+            alert.alertStyle = .critical
+        } else {
+            alert.informativeText = "The previous session may have crashed. Would you like to start in Safe Mode with the engine stopped, so you can review your settings before starting it again?"
+            alert.alertStyle = .warning
+        }
+        alert.addButton(withTitle: "Start in Safe Mode")
+        alert.addButton(withTitle: "Start Normally")
+        let response = alert.runModal()
+        let choseSafeMode = (response == .alertFirstButtonReturn)
+        NSLog("[AppDelegate] Crash detected (consecutive=%d); user chose %@", crashCount, choseSafeMode ? "Safe Mode" : "Normal start")
+        return choseSafeMode
     }
 
     private func preloadIcons() {
@@ -418,6 +458,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        // Reached the normal termination path: record a clean shutdown so the next boot is not
+        // misclassified as a crash. (Switch relaunches also pass through here.)
+        crashSentinel.markCleanShutdown()
         NotificationCenter.default.removeObserver(self, name: .authDirectoryChanged, object: nil)
         pendingAuthRefresh?.cancel()
         authFileMonitor?.cancel()
@@ -550,6 +593,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         completionHandler([.banner, .sound])
     }
 }
+
+
+
 
 
 

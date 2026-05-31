@@ -52,6 +52,10 @@ public protocol DarioHost: AnyObject {
     /// Stops the Dario proxy cleanly.
     func stop(completion: @escaping () -> Void)
 
+    /// Runs `dario login` to authenticate the Claude subscription. `dario proxy` is auth-gated,
+    /// so this is required before the proxy will serve. Calls completion with success + a message.
+    func login(completion: @escaping (Bool, String) -> Void)
+
     /// Recent log lines for the diagnostics view (most recent last).
     func recentLogLines() -> [String]
 }

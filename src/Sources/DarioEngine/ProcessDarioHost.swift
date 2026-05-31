@@ -135,6 +135,56 @@ public final class ProcessDarioHost: DarioHost {
         }
     }
 
+    public func login(completion: @escaping (Bool, String) -> Void) {
+        guard FileManager.default.fileExists(atPath: binaryPath) else {
+            completion(false, "Dario binary not found")
+            return
+        }
+        logStore.append("Running dario login - complete the browser flow to authenticate")
+
+        var environment: [String: String] = ["VIBEPROXY_ENGINE": "dario"]
+        if let home = ProcessInfo.processInfo.environment["HOME"] { environment["HOME"] = home }
+        if let path = ProcessInfo.processInfo.environment["PATH"] { environment["PATH"] = path }
+
+        let logStore = self.logStore
+        let loginConfig = ManagedProcessConfiguration(
+            executablePath: binaryPath,
+            arguments: ["login"],
+            environment: environment
+        )
+        let loginProcess = ManagedProcess(configuration: loginConfig) { @Sendable line in
+            logStore.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        Task {
+            do {
+                try await loginProcess.launch()
+            } catch {
+                completion(false, "Failed to start dario login: \(error)")
+                return
+            }
+            // dario login opens a browser and exits when the OAuth flow completes (or is cancelled).
+            // Poll for the process to finish, then report based on exit status.
+            let deadline = Date().addingTimeInterval(180)
+            while Date() < deadline {
+                if await loginProcess.isRunning == false {
+                    let exit = await loginProcess.terminationStatus() ?? -1
+                    if exit == 0 {
+                        self.status = DarioStatusSnapshot(state: self.status.state, endpoint: self.endpoint, isLoggedIn: true, backends: self.status.backends)
+                        self.onStatusChange?()
+                        completion(true, "Logged in to Dario.")
+                    } else {
+                        completion(false, "dario login exited with status \(exit). Check the logs.")
+                    }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 500_000_000)
+            }
+            await loginProcess.terminate()
+            completion(false, "dario login timed out. Try again.")
+        }
+    }
+
     public func recentLogLines() -> [String] {
         logStore.snapshot()
     }

@@ -46,6 +46,18 @@ public final class MockDarioHost: DarioHost {
         completion()
     }
 
+    public func login(completion: @escaping (Bool, String) -> Void) {
+        appendLog("dario login (mock) - simulating successful authentication")
+        status = DarioStatusSnapshot(
+            state: status.state,
+            endpoint: endpoint,
+            isLoggedIn: true,
+            backends: status.backends
+        )
+        onStatusChange?()
+        completion(true, "Logged in (mock).")
+    }
+
     public func recentLogLines() -> [String] {
         logLines
     }

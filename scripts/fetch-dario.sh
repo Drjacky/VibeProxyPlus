@@ -106,5 +106,9 @@ mkdir -p "$TARGET_DIR"
 cp "$COMPILED_BIN" "$TARGET_FILE"
 chmod +x "$TARGET_FILE"
 echo "$TARGET_VERSION" > "$VERSION_FILE"
+# Record a checksum of the installed binary for supply-chain verification (release pipeline
+# can compare this to detect tampering between build and bundling).
+shasum -a 256 "$TARGET_FILE" | awk '{print $1}' > "$TARGET_FILE.sha256"
 file "$TARGET_FILE"
 echo "Installed dario $(installed_version) ($(wc -c < "$TARGET_FILE" | tr -d ' ') bytes) to $TARGET_FILE"
+echo "Checksum: $(cat "$TARGET_FILE.sha256")"

@@ -85,9 +85,12 @@ public final class LogStore: @unchecked Sendable {
     }
 
     /// Appends a timestamped line and notifies `onUpdate` on the main queue.
+    ///
+    /// The message is passed through `SecretScrubber` first, so tokens/keys/JWTs in captured
+    /// subprocess output never reach the in-memory buffer, the UI, or a diagnostics export.
     public func append(_ message: String) {
         let timestamp = timestampFormatter.string(from: Date())
-        let line = "[\(timestamp)] \(message)"
+        let line = "[\(timestamp)] \(SecretScrubber.scrub(message))"
 
         lock.lock()
         buffer.append(line)
