@@ -74,7 +74,7 @@ let package = Package(
         // turn this into the thin AppShell that registers both engines.
         .executableTarget(
             name: "CLIProxyMenuBar",
-            dependencies: ["Sparkle", "CLIProxyEngine"],
+            dependencies: ["Sparkle", "EngineKit", "CLIProxyEngine"],
             path: "Sources/CLIProxyMenuBar",
             resources: [
                 .copy("Resources")

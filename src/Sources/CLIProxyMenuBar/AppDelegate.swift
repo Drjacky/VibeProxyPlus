@@ -3,14 +3,20 @@ import SwiftUI
 import WebKit
 import UserNotifications
 import Sparkle
+import EngineKit
 import CLIProxyEngine
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNotificationCenterDelegate {
     var statusItem: NSStatusItem!
     var menu: NSMenu!
     weak var settingsWindow: NSWindow?
-    var serverManager: ServerManager!
-    var thinkingProxy: ThinkingProxy!
+
+    /// The registry of known engines. The shell registers engines here at boot.
+    private let registry = EngineRegistry()
+    /// The single active engine for this process lifetime (one engine per launch).
+    private var activeEngine: Engine!
+
     private let notificationCenter = UNUserNotificationCenter.current()
     private var notificationPermissionGranted = false
     private let updaterController: SPUStandardUpdaterController
@@ -32,31 +38,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         // Setup menu bar
         setupMenuBar()
 
-        // Initialize managers
-        serverManager = ServerManager()
-        thinkingProxy = ThinkingProxy()
+        // Register the known engines and activate the selected one (cliproxyapiplus by default).
+        registerEngines()
+        activateSelectedEngine()
 
-        // Sync Vercel AI Gateway config from ServerManager to ThinkingProxy
-        syncVercelConfig()
-        serverManager.onVercelConfigChanged = { [weak self] in
-            self?.syncVercelConfig()
-        }
-        
         // Warm commonly used icons to avoid first-use disk hits
         preloadIcons()
         
         configureNotifications()
 
-        // Start server automatically
+        // Start the engine automatically
         startServer()
 
-        // Register for notifications
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateMenuBarStatus),
-            name: .serverStatusChanged,
-            object: nil
-        )
+        // Register for status changes from the active engine
+        activeEngine.onStatusChange = { [weak self] in
+            self?.updateMenuBarStatus()
+        }
 
         // Monitor auth directory for credential file changes (app-lifetime scope)
         startMonitoringAuthDirectory()
@@ -65,6 +62,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
             selector: #selector(handleAuthDirectoryChanged),
             name: .authDirectoryChanged,
             object: nil
+        )
+    }
+
+    // MARK: - Engine bootstrap
+
+    private func registerEngines() {
+        registry.register(CLIProxyEngineImpl.descriptor) { _ in CLIProxyEngineImpl() }
+    }
+
+    private func activateSelectedEngine() {
+        // Phase 3: a single engine is registered; selection/persistence arrives in Phase 4.
+        let engineID = CLIProxyEngineImpl.descriptor.id
+        let context = makeEngineContext(for: engineID)
+        guard let engine = registry.make(engineID, context: context) else {
+            fatalError("No engine registered for id \(engineID)")
+        }
+        engine.activate(context: context)
+        activeEngine = engine
+    }
+
+    /// Builds the per-engine context. CLIProxy keeps its legacy `~/.cli-proxy-api` home for
+    /// backward compatibility (its home name does not match its engine id).
+    private func makeEngineContext(for engineID: EngineID) -> EngineContext {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cli-proxy-api", isDirectory: true)
+        return EngineContext(
+            engineID: engineID,
+            homeDirectory: home,
+            defaultsSuiteName: "com.github.drjacky.engine.\(engineID.rawValue)",
+            keychainServicePrefix: "com.github.drjacky.\(engineID.rawValue)"
         )
     }
 
@@ -213,7 +240,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         window.delegate = self
         window.isReleasedWhenClosed = false
 
-        let contentView = SettingsView(serverManager: serverManager)
+        let contentView = activeEngine.makeSettingsView()
         window.contentView = NSHostingView(rootView: contentView)
 
         settingsWindow = window
@@ -226,7 +253,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     @objc func toggleServer() {
-        if serverManager.isRunning {
+        if activeEngine.isRunning {
             stopServer()
         } else {
             startServer()
@@ -234,76 +261,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     func startServer() {
-        // Start the thinking proxy first (port 8317)
-        thinkingProxy.start()
-        
-        // Poll for thinking proxy readiness with timeout
-        pollForProxyReadiness(attempts: 0, maxAttempts: 60, intervalMs: 50)
-    }
-    
-    private func pollForProxyReadiness(attempts: Int, maxAttempts: Int, intervalMs: Int) {
-        // Check if proxy is running
-        if thinkingProxy.isRunning {
-            // Success - proceed to start backend
-            serverManager.start { [weak self] success in
-                DispatchQueue.main.async {
-                    if success {
-                        self?.updateMenuBarStatus()
-                        // User always connects to 8317 (thinking proxy)
-                        self?.showNotification(title: "Server Started", body: "VibeProxyPlus is now running")
-                    } else {
-                        // Backend failed - stop the proxy to keep state consistent
-                        self?.thinkingProxy.stop()
-                        self?.showNotification(title: "Server Failed", body: "Could not start backend server on port 8318")
-                    }
+        activeEngine.start { [weak self] success in
+            DispatchQueue.main.async {
+                if success {
+                    self?.updateMenuBarStatus()
+                    self?.showNotification(title: "Server Started", body: "VibeProxyPlus is now running")
+                } else {
+                    self?.showNotification(title: "Server Failed", body: "Could not start the engine")
                 }
             }
-            return
-        }
-        
-        // Check if we've exceeded timeout
-        if attempts >= maxAttempts {
-            DispatchQueue.main.async { [weak self] in
-                // Clean up partially initialized proxy
-                self?.thinkingProxy.stop()
-                self?.showNotification(title: "Server Failed", body: "Could not start thinking proxy on port 8317 (timeout)")
-            }
-            return
-        }
-        
-        // Schedule next poll
-        let interval = Double(intervalMs) / 1000.0
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
-            self?.pollForProxyReadiness(attempts: attempts + 1, maxAttempts: maxAttempts, intervalMs: intervalMs)
         }
     }
 
     func stopServer() {
-        // Stop the thinking proxy first to stop accepting new requests
-        thinkingProxy.stop()
-        
-        // Then stop CLIProxyAPI backend
-        serverManager.stop()
-        
-        updateMenuBarStatus()
+        activeEngine.shutdown { [weak self] in
+            self?.updateMenuBarStatus()
+        }
     }
 
     @objc func copyServerURL() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString("http://localhost:\(thinkingProxy.proxyPort)", forType: .string)
+        pasteboard.setString(activeEngine.userVisibleURL.absoluteString, forType: .string)
         showNotification(title: "Copied", body: "Server URL copied to clipboard")
     }
 
     @objc func openDashboard() {
-        if let url = URL(string: "http://localhost:8318/management.html") {
+        if let url = activeEngine.dashboardURL {
             NSWorkspace.shared.open(url)
         }
     }
 
     @objc func handleAuthDirectoryChanged() {
         NSLog("[AppDelegate] Auth directory changed notification received — refreshing settings")
-        serverManager.handleObservedConfigInputsChanged()
         // Re-open settings window if it exists so the user sees the new account
         if let window = settingsWindow {
             window.makeKeyAndOrderFront(nil)
@@ -312,37 +302,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     @objc func updateMenuBarStatus() {
+        let isRunning = activeEngine.isRunning
+
         // Update status items
         if let serverStatus = menu.item(at: 0) {
-            serverStatus.title = serverManager.isRunning ? "Server: Running (port \(thinkingProxy.proxyPort))" : "Server: Stopped"
+            serverStatus.title = isRunning ? "Server: Running" : "Server: Stopped"
         }
 
         // Update button states
         if let startStopItem = menu.item(withTag: 100) {
-            startStopItem.title = serverManager.isRunning ? "Stop Server" : "Start Server"
+            startStopItem.title = isRunning ? "Stop Server" : "Start Server"
         }
 
         if let copyURLItem = menu.item(withTag: 102) {
-            copyURLItem.isEnabled = serverManager.isRunning
+            copyURLItem.isEnabled = isRunning
         }
 
         if let dashboardItem = menu.item(withTag: 103) {
-            dashboardItem.isEnabled = serverManager.isRunning
+            dashboardItem.isEnabled = isRunning
         }
 
         // Update icon based on server status
         if let button = statusItem.button {
-            let iconName = serverManager.isRunning ? "icon-active.png" : "icon-inactive.png"
-            let fallbackSymbol = serverManager.isRunning ? "network" : "network.slash"
+            let iconName = isRunning ? "icon-active.png" : "icon-inactive.png"
+            let fallbackSymbol = isRunning ? "network" : "network.slash"
             
             if let icon = IconCatalog.shared.image(named: iconName, resizedTo: NSSize(width: 18, height: 18), template: true) {
                 button.image = icon
-                NSLog("[MenuBar] Loaded %@ icon from cache", serverManager.isRunning ? "active" : "inactive")
+                NSLog("[MenuBar] Loaded %@ icon from cache", isRunning ? "active" : "inactive")
             } else {
-                let fallback = NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: serverManager.isRunning ? "Running" : "Stopped")
+                let fallback = NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: isRunning ? "Running" : "Stopped")
                 fallback?.isTemplate = true
                 button.image = fallback
-                NSLog("[MenuBar] Failed to load %@ icon; using fallback", serverManager.isRunning ? "active" : "inactive")
+                NSLog("[MenuBar] Failed to load %@ icon; using fallback", isRunning ? "active" : "inactive")
             }
         }
     }
@@ -367,10 +359,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     @objc func quit() {
-        // Stop server and wait for cleanup before quitting
-        if serverManager.isRunning {
-            thinkingProxy.stop()
-            serverManager.stop()
+        // Stop engine and wait for cleanup before quitting
+        if activeEngine.isRunning {
+            activeEngine.shutdown { }
         }
         // Give a moment for cleanup to complete
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -379,25 +370,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        NotificationCenter.default.removeObserver(self, name: .serverStatusChanged, object: nil)
         NotificationCenter.default.removeObserver(self, name: .authDirectoryChanged, object: nil)
         pendingAuthRefresh?.cancel()
         authFileMonitor?.cancel()
         authFileMonitor = nil
-        // Final cleanup - stop server if still running
-        if serverManager.isRunning {
-            thinkingProxy.stop()
-            serverManager.stop()
+        // Final cleanup - stop engine if still running
+        if activeEngine.isRunning {
+            activeEngine.shutdown { }
         }
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // If server is running, stop it first
-        if serverManager.isRunning {
-            thinkingProxy.stop()
-            serverManager.stop()
-            // Give server time to stop (up to 3 seconds total with the improved stop method)
-            return .terminateNow
+        // If engine is running, stop it first
+        if activeEngine.isRunning {
+            activeEngine.shutdown { }
         }
         return .terminateNow
     }
@@ -507,15 +493,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         ConfigInputFingerprint.compute(
             in: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cli-proxy-api"),
             userConfigFilename: "config.yaml"
-        )
-    }
-
-    // MARK: - Vercel Config Sync
-
-    private func syncVercelConfig() {
-        thinkingProxy.vercelConfig = VercelGatewayConfig(
-            enabled: serverManager.vercelGatewayEnabled,
-            apiKey: serverManager.vercelApiKey
         )
     }
 
