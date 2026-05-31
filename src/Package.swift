@@ -107,6 +107,11 @@ let package = Package(
             name: "DiagnosticsTests",
             dependencies: ["Diagnostics", "EngineKit"],
             path: "Tests/DiagnosticsTests"
+        ),
+        .testTarget(
+            name: "DarioEngineTests",
+            dependencies: ["DarioEngine", "EngineKit"],
+            path: "Tests/DarioEngineTests"
         )
     ]
 )
