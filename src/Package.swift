@@ -83,7 +83,30 @@ let package = Package(
         .testTarget(
             name: "CLIProxyMenuBarTests",
             dependencies: ["CLIProxyMenuBar"],
-            path: "Tests"
+            path: "Tests/CLIProxyMenuBarTests"
+        ),
+
+        // MARK: - Shared infrastructure tests
+
+        .testTarget(
+            name: "EngineKitTests",
+            dependencies: ["EngineKit"],
+            path: "Tests/EngineKitTests"
+        ),
+        .testTarget(
+            name: "ProcessRuntimeTests",
+            dependencies: ["ProcessRuntime", "EngineKit"],
+            path: "Tests/ProcessRuntimeTests"
+        ),
+        .testTarget(
+            name: "PersistenceTests",
+            dependencies: ["Persistence", "EngineKit"],
+            path: "Tests/PersistenceTests"
+        ),
+        .testTarget(
+            name: "DiagnosticsTests",
+            dependencies: ["Diagnostics", "EngineKit"],
+            path: "Tests/DiagnosticsTests"
         )
     ]
 )
