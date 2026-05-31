@@ -4,6 +4,13 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Dario engine.** VibeProxyPlus now bundles a second, fully independent proxy engine based on [askalf/dario](https://github.com/askalf/dario) alongside the existing CLIProxyAPIPlus engine. Switch between them from the menu bar ("Switch to Dario Engine" / "Switch to cliproxyapiplus Engine"); switching shows a confirmation dialog, cleanly stops the running engine, and relaunches into the selected one. The choice persists across launches. The engines are fully isolated (separate config homes `~/.cli-proxy-api/` and `~/.dario/`, settings, credential storage, and process lifecycles). In Dario mode the app behaves as a dedicated Dario client and offers a one-time **Login** from its settings.
+- **Secret redaction in logs.** All logged lines (including engine subprocess output) are scrubbed of API keys, bearer tokens, JWTs, and access/refresh tokens before reaching the log buffer or diagnostics.
+- **Crash safe-mode.** After an abnormal prior exit the app offers to start with the engine stopped so you can review settings before re-engaging.
+- **Supply-chain checksums.** Engine fetch scripts record a SHA-256 of each bundled binary.
+
 ## [10.8.170] - 2026-05-30
 
 ### Added

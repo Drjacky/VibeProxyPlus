@@ -61,6 +61,19 @@ VibeProxyPlus connects the AI subscriptions you already pay for to a single loca
 
 ---
 
+## Engines
+
+VibeProxyPlus ships with two completely independent proxy engines inside a single app. Only one runs at a time.
+
+- **CLIProxyAPIPlus** (default) - the engine described above; everything in this README applies to it.
+- **Dario** - an alternative engine based on [askalf/dario](https://github.com/askalf/dario), bundled as a single self-contained binary.
+
+Switch engines from the menu bar: **Switch to Dario Engine** / **Switch to cliproxyapiplus Engine**. Switching shows a confirmation dialog, cleanly stops the running engine, and relaunches the app into the selected engine. The choice is remembered across launches. The two engines are fully isolated: separate config homes (`~/.cli-proxy-api/` vs `~/.dario/`), separate settings/preferences, separate credential storage, and separate process lifecycles - so neither can corrupt or interfere with the other.
+
+In Dario mode the entire app (settings, connection management, login, logs) behaves as a dedicated Dario client. Dario requires a one-time **Login** from its settings before its proxy will serve requests.
+
+---
+
 ## Installation
 
 **Requirements:** macOS 13 or later.
@@ -87,11 +100,11 @@ More detail: [INSTALLATION.md](INSTALLATION.md)
 ```bash
 git clone https://github.com/Drjacky/vibeproxyplus.git
 cd vibeproxyplus
-make app    # downloads cli-proxy-api-plus automatically
+make app    # downloads cli-proxy-api-plus and builds the dario engine binary automatically
 open VibeProxyPlus.app
 ```
 
-Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first).
+Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first). Building the bundled **Dario** engine binary additionally requires [Bun](https://bun.sh) and Node >=18 on the build machine only (never on the end user's machine); `scripts/fetch-dario.sh` clones the pinned Dario tag and compiles a single self-contained binary with `bun build --compile`.
 
 Regenerate `AppIcon.icns` after editing `icon.png`: `make icon`
 
