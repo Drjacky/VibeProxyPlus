@@ -1,7 +1,7 @@
 import Foundation
 import CryptoKit
 
-enum ConfigInputFingerprint {
+public enum ConfigInputFingerprint {
     static func relevantFileURLs(
         in directoryURL: URL,
         userConfigFilename: String = "config.yaml",
@@ -37,7 +37,7 @@ enum ConfigInputFingerprint {
         return urls
     }
 
-    static func compute(
+    public static func compute(
         in directoryURL: URL,
         userConfigFilename: String = "config.yaml",
         fileManager: FileManager = .default

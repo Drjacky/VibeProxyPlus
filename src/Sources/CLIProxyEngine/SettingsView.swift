@@ -517,9 +517,14 @@ struct CustomProviderRow: View {
     }
 }
 
-struct SettingsView: View {
+public struct SettingsView: View {
     @ObservedObject var serverManager: ServerManager
     @StateObject private var authManager = AuthManager()
+
+    public init(serverManager: ServerManager) {
+        self.serverManager = serverManager
+    }
+
     @State private var launchAtLogin = false
     @State private var authenticatingService: ServiceType? = nil
     @State private var fetchingCursorAuthLocally = false
@@ -546,7 +551,7 @@ struct SettingsView: View {
         return ""
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             Form {
                 Section {
@@ -1245,6 +1250,7 @@ struct SettingsView: View {
         }
     }
 }
+
 
 
 

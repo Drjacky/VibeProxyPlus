@@ -54,8 +54,11 @@ let package = Package(
         // cliproxyapiplus engine. Must never import DarioEngine.
         .target(
             name: "CLIProxyEngine",
-            dependencies: ["EngineKit", "SharedUI", "Persistence", "ProcessRuntime", "Diagnostics"],
-            path: "Sources/CLIProxyEngine"
+            dependencies: ["EngineKit", "SharedUI", "Persistence", "ProcessRuntime", "Diagnostics", "Yams"],
+            path: "Sources/CLIProxyEngine",
+            linkerSettings: [
+                .linkedLibrary("sqlite3")
+            ]
         ),
         // Dario engine. Must never import CLIProxyEngine.
         .target(
@@ -71,19 +74,16 @@ let package = Package(
         // turn this into the thin AppShell that registers both engines.
         .executableTarget(
             name: "CLIProxyMenuBar",
-            dependencies: ["Sparkle", "Yams"],
+            dependencies: ["Sparkle", "CLIProxyEngine"],
             path: "Sources/CLIProxyMenuBar",
             resources: [
                 .copy("Resources")
-            ],
-            linkerSettings: [
-                .linkedLibrary("sqlite3")
             ]
         ),
         .testTarget(
-            name: "CLIProxyMenuBarTests",
-            dependencies: ["CLIProxyMenuBar"],
-            path: "Tests/CLIProxyMenuBarTests"
+            name: "CLIProxyEngineTests",
+            dependencies: ["CLIProxyEngine"],
+            path: "Tests/CLIProxyEngineTests"
         ),
 
         // MARK: - Shared infrastructure tests

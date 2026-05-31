@@ -1,7 +1,7 @@
 import AppKit
 
-final class IconCatalog {
-    static let shared = IconCatalog()
+public final class IconCatalog {
+    public static let shared = IconCatalog()
     
     private let cacheLock = NSLock()
     private var cache: [String: NSImage] = [:]
@@ -9,7 +9,7 @@ final class IconCatalog {
     
     private init() {}
     
-    func image(named name: String, resizedTo size: NSSize? = nil, template: Bool = false) -> NSImage? {
+    public func image(named name: String, resizedTo size: NSSize? = nil, template: Bool = false) -> NSImage? {
         let key = cacheKey(name: name, size: size, template: template)
         
         cacheLock.lock()

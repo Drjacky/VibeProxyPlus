@@ -15,22 +15,29 @@ import Network
  - claude-sonnet-4-5-20250929-thinking-2000 → 2,000 token budget
  - claude-sonnet-4-5-20250929-thinking-8000 → 8,000 token budget
  */
-struct VercelGatewayConfig {
-    var enabled: Bool
-    var apiKey: String
+public struct VercelGatewayConfig {
+    public var enabled: Bool
+    public var apiKey: String
+
+    public init(enabled: Bool, apiKey: String) {
+        self.enabled = enabled
+        self.apiKey = apiKey
+    }
 
     var isActive: Bool { enabled && !apiKey.isEmpty }
 }
 
-class ThinkingProxy {
+public class ThinkingProxy {
     private var listener: NWListener?
-    let proxyPort: UInt16 = 8317
+    public let proxyPort: UInt16 = 8317
     private let targetPort: UInt16 = 8318
     private let targetHost = "127.0.0.1"
-    private(set) var isRunning = false
+    public private(set) var isRunning = false
     private let stateQueue = DispatchQueue(label: "com.github.drjacky.thinking-proxy-state")
 
-    var vercelConfig = VercelGatewayConfig(enabled: false, apiKey: "")
+    public var vercelConfig = VercelGatewayConfig(enabled: false, apiKey: "")
+
+    public init() {}
     
     private enum Config {
         static let hardTokenCap = 32000
@@ -43,7 +50,7 @@ class ThinkingProxy {
     /**
      Starts the thinking proxy server on port 8317
      */
-    func start() {
+    public func start() {
         guard !isRunning else {
             NSLog("[ThinkingProxy] Already running")
             return
@@ -95,7 +102,7 @@ class ThinkingProxy {
     /**
      Stops the thinking proxy server
      */
-    func stop() {
+    public func stop() {
         stateQueue.sync {
             guard isRunning else { return }
             
@@ -958,3 +965,4 @@ class ThinkingProxy {
         }))
     }
 }
+

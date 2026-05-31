@@ -50,10 +50,10 @@ private struct RingBuffer<Element> {
     }
 }
 
-class ServerManager: ObservableObject {
+public class ServerManager: ObservableObject {
     private var process: Process?
     private var activeAuthProcess: Process?
-    @Published private(set) var isRunning = false
+    @Published public private(set) var isRunning = false
     private(set) var port = 8317
     @Published private(set) var customProviders: [CustomProviderDefinition] = []
     @Published private(set) var customProviderCredentials: [String: [CustomProviderCredential]] = [:]
@@ -67,19 +67,19 @@ class ServerManager: ObservableObject {
     }
 
     /// Vercel AI Gateway configuration for Claude requests
-    @Published var vercelGatewayEnabled: Bool = false {
+    @Published public var vercelGatewayEnabled: Bool = false {
         didSet {
             UserDefaults.standard.set(vercelGatewayEnabled, forKey: "vercelGatewayEnabled")
             onVercelConfigChanged?()
         }
     }
-    @Published var vercelApiKey: String = "" {
+    @Published public var vercelApiKey: String = "" {
         didSet {
             UserDefaults.standard.set(vercelApiKey, forKey: "vercelApiKey")
             onVercelConfigChanged?()
         }
     }
-    var onVercelConfigChanged: (() -> Void)?
+    public var onVercelConfigChanged: (() -> Void)?
 
     /// Helper class to capture output text across closures
     private class OutputCapture {
@@ -132,7 +132,7 @@ class ServerManager: ObservableObject {
     
     var onLogUpdate: (([String]) -> Void)?
 
-    init() {
+    public init() {
         logBuffer = RingBuffer(capacity: maxLogLines)
         if let saved = UserDefaults.standard.dictionary(forKey: "enabledProviders") as? [String: Bool] {
             enabledProviders = saved
@@ -210,7 +210,7 @@ class ServerManager: ObservableObject {
         killOrphanedProcesses()
     }
     
-    func start(completion: @escaping (Bool) -> Void) {
+    public func start(completion: @escaping (Bool) -> Void) {
         guard !isRunning else {
             completion(true)
             return
@@ -305,7 +305,7 @@ class ServerManager: ObservableObject {
         }
     }
     
-    func stop(completion: (() -> Void)? = nil) {
+    public func stop(completion: (() -> Void)? = nil) {
         guard let process = process else {
             DispatchQueue.main.async {
                 self.isRunning = false
@@ -771,7 +771,7 @@ class ServerManager: ObservableObject {
         }
     }
 
-    func handleObservedConfigInputsChanged() {
+    public func handleObservedConfigInputsChanged() {
         guard markObservedConfigInputsChanged() else {
             return
         }
@@ -1293,3 +1293,6 @@ enum AuthCommand: Equatable {
     case antigravityLogin
     case cursorLogin
 }
+
+
+

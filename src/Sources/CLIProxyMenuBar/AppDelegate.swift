@@ -3,6 +3,7 @@ import SwiftUI
 import WebKit
 import UserNotifications
 import Sparkle
+import CLIProxyEngine
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNotificationCenterDelegate {
     var statusItem: NSStatusItem!

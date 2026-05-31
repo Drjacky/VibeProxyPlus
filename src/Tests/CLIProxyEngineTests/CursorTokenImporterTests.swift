@@ -1,5 +1,5 @@
 import XCTest
-@testable import CLIProxyMenuBar
+@testable import CLIProxyEngine
 
 final class CursorTokenImporterTests: XCTestCase {
     func testResolveCredentialFileURLPrefersExistingCursorJson() throws {
