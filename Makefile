@@ -24,6 +24,10 @@ fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
 	@chmod +x scripts/fetch-cliproxy-plus.sh
 	@./scripts/fetch-cliproxy-plus.sh
 
+fetch-dario: ## Build the dario engine binary via Bun (required before first build)
+	@chmod +x scripts/fetch-dario.sh
+	@./scripts/fetch-dario.sh
+
 check-isolation: ## Verify engine modules stay mutually isolated (no cross-engine imports)
 	@chmod +x scripts/check-engine-isolation.sh
 	@./scripts/check-engine-isolation.sh
@@ -39,7 +43,7 @@ sync-version: ## Copy VERSION -> src/Info.plist
 version: ## Print app version from VERSION file
 	@tr -d '[:space:]' < VERSION && echo
 
-app: sync-version fetch-cliproxy ## Create the .app bundle
+app: sync-version fetch-cliproxy fetch-dario ## Create the .app bundle
 	@echo "📦 Creating .app bundle..."
 	@./create-app-bundle.sh
 	@echo "✅ App bundle created: VibeProxyPlus.app"

@@ -21,11 +21,26 @@ public final class DarioEngineImpl: Engine {
 
     public var onStatusChange: (() -> Void)?
 
-    /// - Parameter host: Injectable for tests / Split B. Defaults to the mock host.
+    /// - Parameter host: Injectable for tests. When nil, uses the bundled `dario` binary via
+    ///   `ProcessDarioHost` if present in the app bundle, otherwise falls back to the mock host
+    ///   (useful for `swift run`/tests where no binary is bundled).
     public init(host: DarioHost? = nil) {
         let endpoint = URL(string: "http://localhost:3456")!
         self.endpoint = endpoint
-        self.host = host ?? MockDarioHost(endpoint: endpoint)
+        if let host {
+            self.host = host
+        } else if let binaryPath = Self.bundledBinaryPath() {
+            self.host = ProcessDarioHost(binaryPath: binaryPath, port: 3456)
+        } else {
+            self.host = MockDarioHost(endpoint: endpoint)
+        }
+    }
+
+    /// Resolves the bundled `dario` binary path, or nil if it is not present.
+    private static func bundledBinaryPath() -> String? {
+        guard let resourcePath = Bundle.main.resourcePath else { return nil }
+        let path = (resourcePath as NSString).appendingPathComponent("dario")
+        return FileManager.default.fileExists(atPath: path) ? path : nil
     }
 
     public var isRunning: Bool { host.status.state.isRunning }

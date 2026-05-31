@@ -27,6 +27,14 @@ if [ ! -f "$BINARY_RESOURCE" ] || [ ! -s "$BINARY_RESOURCE" ] || head -1 "$BINAR
     "$PROJECT_DIR/scripts/fetch-cliproxy-plus.sh"
 fi
 
+# Dario engine binary is not in git; built at build time by scripts/fetch-dario.sh (Bun --compile).
+DARIO_RESOURCE="$SRC_DIR/Sources/CLIProxyMenuBar/Resources/dario"
+if [ ! -f "$DARIO_RESOURCE" ] || [ ! -s "$DARIO_RESOURCE" ]; then
+    echo -e "${BLUE}Building dario engine binary...${NC}"
+    chmod +x "$PROJECT_DIR/scripts/fetch-dario.sh"
+    "$PROJECT_DIR/scripts/fetch-dario.sh"
+fi
+
 # Build the Swift executable first
 echo -e "${BLUE}Building Swift executable (release)...${NC}"
 cd "$SRC_DIR"
@@ -162,6 +170,20 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
         fi
         echo -e "${GREEN}✅ cli-proxy-api-plus signed${NC}"
     fi
+
+    # Sign the dario engine binary (required for notarization)
+    if [ -f "$APP_DIR/Contents/Resources/dario" ]; then
+        echo -e "${BLUE}Signing dario binary...${NC}"
+        if [ -f "$PROJECT_DIR/entitlements.plist" ]; then
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp \
+                --entitlements "$PROJECT_DIR/entitlements.plist" \
+                "$APP_DIR/Contents/Resources/dario"
+        else
+            codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp \
+                "$APP_DIR/Contents/Resources/dario"
+        fi
+        echo -e "${GREEN}✅ dario signed${NC}"
+    fi
     
     # Sign Sparkle.framework (required for notarization)
     if [ -d "$APP_DIR/Contents/Frameworks/Sparkle.framework" ]; then
@@ -216,3 +238,4 @@ echo "  2. Double-click to launch"
 echo ""
 echo "To allow opening (if macOS blocks it):"
 echo "  Right-click > Open, then click 'Open' in the dialog"
+

@@ -36,6 +36,9 @@ src/Sources/CLIProxyMenuBar/Resources/AppIcon.iconset/
 # Bundled backend (~50MB) — fetched by scripts/fetch-cliproxy-plus.sh
 src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus
 
+# Bundled Dario engine (~60MB) — built by scripts/fetch-dario.sh (Bun --compile)
+src/Sources/CLIProxyMenuBar/Resources/dario
+
 # Logs
 *.log
 test-notarization.sh
