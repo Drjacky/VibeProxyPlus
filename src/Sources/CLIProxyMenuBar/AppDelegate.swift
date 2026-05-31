@@ -5,6 +5,7 @@ import UserNotifications
 import Sparkle
 import EngineKit
 import CLIProxyEngine
+import DarioEngine
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNotificationCenterDelegate {
@@ -14,6 +15,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
 
     /// The registry of known engines. The shell registers engines here at boot.
     private let registry = EngineRegistry()
+    /// Persisted engine selection (defaults to cliproxyapiplus on a fresh install).
+    private let selectionStore = EngineSelectionStore(defaultEngineID: CLIProxyEngineImpl.descriptor.id)
+    /// Orchestrates full-relaunch engine switching.
+    private var switchCoordinator: EngineSwitchCoordinator!
     /// The single active engine for this process lifetime (one engine per launch).
     private var activeEngine: Engine!
 
@@ -55,44 +60,65 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
             self?.updateMenuBarStatus()
         }
 
-        // Monitor auth directory for credential file changes (app-lifetime scope)
-        startMonitoringAuthDirectory()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAuthDirectoryChanged),
-            name: .authDirectoryChanged,
-            object: nil
-        )
+        // Clear the switch-pending flag now that we have booted into the selected engine.
+        selectionStore.completeSwitch()
+
+        // CLIProxy-specific: monitor its auth directory for credential file changes.
+        if activeEngine.descriptor.id == CLIProxyEngineImpl.descriptor.id {
+            startMonitoringAuthDirectory()
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleAuthDirectoryChanged),
+                name: .authDirectoryChanged,
+                object: nil
+            )
+        }
     }
 
     // MARK: - Engine bootstrap
 
     private func registerEngines() {
         registry.register(CLIProxyEngineImpl.descriptor) { _ in CLIProxyEngineImpl() }
+        registry.register(DarioEngineImpl.descriptor) { _ in DarioEngineImpl() }
     }
 
     private func activateSelectedEngine() {
-        // Phase 3: a single engine is registered; selection/persistence arrives in Phase 4.
-        let engineID = CLIProxyEngineImpl.descriptor.id
+        // Boot into the persisted selection, falling back to the registry's first engine if the
+        // stored id is somehow unregistered (defensive; should not happen in normal operation).
+        var engineID = selectionStore.selectedEngineID
+        if !registry.contains(engineID) {
+            engineID = CLIProxyEngineImpl.descriptor.id
+        }
         let context = makeEngineContext(for: engineID)
         guard let engine = registry.make(engineID, context: context) else {
             fatalError("No engine registered for id \(engineID)")
         }
         engine.activate(context: context)
         activeEngine = engine
+        switchCoordinator = EngineSwitchCoordinator(selectionStore: selectionStore, registry: registry)
     }
 
     /// Builds the per-engine context. CLIProxy keeps its legacy `~/.cli-proxy-api` home for
-    /// backward compatibility (its home name does not match its engine id).
+    /// backward compatibility (its home name does not match its engine id); other engines use a
+    /// dotfolder named after their id (for example `~/.dario`).
     private func makeEngineContext(for engineID: EngineID) -> EngineContext {
+        let homeName = engineID == CLIProxyEngineImpl.descriptor.id
+            ? ".cli-proxy-api"
+            : ".\(engineID.rawValue)"
         let home = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cli-proxy-api", isDirectory: true)
+            .appendingPathComponent(homeName, isDirectory: true)
         return EngineContext(
             engineID: engineID,
             homeDirectory: home,
             defaultsSuiteName: "com.github.drjacky.engine.\(engineID.rawValue)",
             keychainServicePrefix: "com.github.drjacky.\(engineID.rawValue)"
         )
+    }
+
+    /// The descriptor of the engine to offer switching to (the first registered engine that is
+    /// not currently active). With two engines this is simply "the other one".
+    private var switchTargetDescriptor: EngineDescriptor? {
+        registry.descriptors.first { $0.id != activeEngine.descriptor.id }
     }
 
     private func preloadIcons() {
@@ -205,6 +231,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
 
         menu.addItem(NSMenuItem.separator())
 
+        // Switch Engine (title set in updateMenuBarStatus based on the other engine)
+        let switchEngineItem = NSMenuItem(title: "Switch Engine", action: #selector(switchEngine), keyEquivalent: "")
+        switchEngineItem.tag = 104
+        menu.addItem(switchEngineItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         // Check for Updates
         let checkForUpdatesItem = NSMenuItem(title: "Check for Updates...", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "u")
         checkForUpdatesItem.target = updaterController
@@ -292,6 +325,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         }
     }
 
+    @objc func switchEngine() {
+        guard let target = switchTargetDescriptor else { return }
+        switchCoordinator.requestSwitch(to: target.id, from: activeEngine)
+    }
+
     @objc func handleAuthDirectoryChanged() {
         NSLog("[AppDelegate] Auth directory changed notification received — refreshing settings")
         // Re-open settings window if it exists so the user sees the new account
@@ -320,6 +358,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
 
         if let dashboardItem = menu.item(withTag: 103) {
             dashboardItem.isEnabled = isRunning
+        }
+
+        // Update the switch-engine item to name the engine we would switch to.
+        if let switchItem = menu.item(withTag: 104) {
+            if let target = switchTargetDescriptor {
+                switchItem.title = "Switch to \(target.displayName) Engine"
+                switchItem.isHidden = false
+            } else {
+                switchItem.isHidden = true
+            }
         }
 
         // Update icon based on server status
@@ -502,3 +550,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, UNUserNoti
         completionHandler([.banner, .sound])
     }
 }
+
+
+
