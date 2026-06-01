@@ -74,133 +74,16 @@ final class DarioEngineTests: XCTestCase {
         XCTAssertFalse(host.recentLogLines().isEmpty)
     }
 
-    func testMockSetAPIKeyConfiguresButDoesNotEnable() {
+    func testMockLoginMarksLoggedIn() {
         let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
-        XCTAssertFalse(host.status.apiKeyConfigured)
-        XCTAssertFalse(host.status.apiKeyEnabled)
+        XCTAssertFalse(host.status.isLoggedIn)
 
-        let done = expectation(description: "set api key")
-        host.setAPIKey(baseURL: "https://api.example.com/v1", apiKey: "sk-test-123") { success, _ in
+        let done = expectation(description: "login")
+        host.login { success, _ in
             XCTAssertTrue(success)
             done.fulfill()
         }
         wait(for: [done], timeout: 2.0)
-        XCTAssertTrue(host.status.apiKeyConfigured)
-        XCTAssertFalse(host.status.apiKeyEnabled, "Saving a key should not auto-enable the backend")
-        XCTAssertFalse(host.status.isSubscriptionLoggedIn)
-        XCTAssertEqual(host.savedAPIBaseURL, "https://api.example.com/v1")
-    }
-
-    func testMockSetAPIKeyAllowsBlankKeyWhenAlreadyConfigured() {
-        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
-
-        let saved = expectation(description: "saved")
-        host.setAPIKey(baseURL: "https://api.example.com/v1", apiKey: "sk-test-123") { _, _ in saved.fulfill() }
-        wait(for: [saved], timeout: 2.0)
-
-        // Editing just the base URL with a blank key keeps the configured state.
-        let edited = expectation(description: "edited url only")
-        host.setAPIKey(baseURL: "https://api.example.com/v2", apiKey: "") { success, _ in
-            XCTAssertTrue(success)
-            edited.fulfill()
-        }
-        wait(for: [edited], timeout: 2.0)
-        XCTAssertTrue(host.status.apiKeyConfigured)
-        XCTAssertEqual(host.savedAPIBaseURL, "https://api.example.com/v2")
-    }
-
-    func testMockSetAPIKeyRejectsBlankKeyWhenNoneConfigured() {
-        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
-        let done = expectation(description: "rejected")
-        host.setAPIKey(baseURL: "https://api.example.com/v1", apiKey: "") { success, _ in
-            XCTAssertFalse(success)
-            done.fulfill()
-        }
-        wait(for: [done], timeout: 2.0)
-        XCTAssertFalse(host.status.apiKeyConfigured)
-    }
-
-    func testMockSetAPIKeyRejectsEmptyInput() {
-        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
-
-        let done = expectation(description: "set api key rejected")
-        host.setAPIKey(baseURL: "  ", apiKey: "") { success, message in
-            XCTAssertFalse(success)
-            XCTAssertFalse(message.isEmpty)
-            done.fulfill()
-        }
-        wait(for: [done], timeout: 2.0)
-        XCTAssertFalse(host.status.apiKeyConfigured)
-    }
-
-    func testCredentialStorePersistsAcrossInstances() {
-        // Simulates quit/relaunch: a second store built from the same context must see the saved
-        // base URL, key, and enabled flag written by the first. The store is file-based under the
-        // engine home, so use a unique temp home and clean it up.
-        let home = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("dario-persist-\(UUID().uuidString)", isDirectory: true)
-        let context = EngineContext(
-            engineID: DarioEngineImpl.descriptor.id,
-            homeDirectory: home,
-            defaultsSuiteName: "test.dario.persist",
-            keychainServicePrefix: "test.dario.persist"
-        )
-        defer { try? FileManager.default.removeItem(at: home) }
-
-        let first = DarioCredentialStore(context: context)
-        first.clear()
-        XCTAssertFalse(first.hasAPIKey)
-        first.save(baseURL: "https://api.example.com/v1", apiKey: "sk-persist-123")
-        first.setEnabled(true)
-
-        let second = DarioCredentialStore(context: context)
-        XCTAssertTrue(second.hasAPIKey)
-        XCTAssertEqual(second.baseURL, "https://api.example.com/v1")
-        XCTAssertEqual(second.apiKey, "sk-persist-123")
-        XCTAssertTrue(second.isEnabled)
-
-        second.clear()
-        let third = DarioCredentialStore(context: context)
-        XCTAssertFalse(third.hasAPIKey)
-        XCTAssertNil(third.baseURL)
-        XCTAssertFalse(third.isEnabled)
-    }
-
-    func testMockEnableAPIKeyRequiresSavedKeyThenActivatesBackend() {
-        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
-
-        // Enabling before a key is saved must fail.
-        let rejected = expectation(description: "enable rejected")
-        host.setAPIKeyEnabled(true) { success, _ in
-            XCTAssertFalse(success)
-            rejected.fulfill()
-        }
-        wait(for: [rejected], timeout: 2.0)
-        XCTAssertFalse(host.status.apiKeyEnabled)
-
-        // Save a key, then enabling succeeds and registers the backend.
-        let saved = expectation(description: "saved")
-        host.setAPIKey(baseURL: "https://api.example.com/v1", apiKey: "sk-test-123") { _, _ in saved.fulfill() }
-        wait(for: [saved], timeout: 2.0)
-
-        let enabled = expectation(description: "enabled")
-        host.setAPIKeyEnabled(true) { success, _ in
-            XCTAssertTrue(success)
-            enabled.fulfill()
-        }
-        wait(for: [enabled], timeout: 2.0)
-        XCTAssertTrue(host.status.apiKeyEnabled)
-        XCTAssertEqual(host.status.backends, ["claude-api"])
-
-        // Disabling clears the active backend but keeps the key configured.
-        let disabled = expectation(description: "disabled")
-        host.setAPIKeyEnabled(false) { success, _ in
-            XCTAssertTrue(success)
-            disabled.fulfill()
-        }
-        wait(for: [disabled], timeout: 2.0)
-        XCTAssertFalse(host.status.apiKeyEnabled)
-        XCTAssertTrue(host.status.apiKeyConfigured)
-        XCTAssertTrue(host.status.backends.isEmpty)
+        XCTAssertTrue(host.status.isLoggedIn)
     }
 }

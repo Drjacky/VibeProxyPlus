@@ -18,7 +18,6 @@ public final class DarioEngineImpl: Engine {
 
     private let host: DarioHost
     private let endpoint: URL
-    private let processHost: ProcessDarioHost?
 
     public var onStatusChange: (() -> Void)?
 
@@ -30,14 +29,10 @@ public final class DarioEngineImpl: Engine {
         self.endpoint = endpoint
         if let host {
             self.host = host
-            self.processHost = host as? ProcessDarioHost
         } else if let binaryPath = Self.bundledBinaryPath() {
-            let processHost = ProcessDarioHost(binaryPath: binaryPath, port: 3456)
-            self.host = processHost
-            self.processHost = processHost
+            self.host = ProcessDarioHost(binaryPath: binaryPath, port: 3456)
         } else {
             self.host = MockDarioHost(endpoint: endpoint)
-            self.processHost = nil
         }
     }
 
@@ -63,9 +58,6 @@ public final class DarioEngineImpl: Engine {
     public var dashboardURL: URL? { nil }
 
     public func activate(context: EngineContext) {
-        // Give the real host a per-engine credential store so it can persist and toggle the
-        // API-key backend. The mock host manages its own in-memory state and needs none.
-        processHost?.credentialStore = DarioCredentialStore(context: context)
         host.onStatusChange = { [weak self] in
             self?.onStatusChange?()
         }
@@ -89,3 +81,4 @@ public final class DarioEngineImpl: Engine {
         AnyView(DarioSettingsView(host: host))
     }
 }
+
