@@ -76,8 +76,10 @@ public protocol DarioHost: AnyObject {
     func login(completion: @escaping (Bool, String) -> Void)
 
     /// Saves a custom base URL + API key (key stored in Keychain). Does not require a subscription.
-    /// If the API-key toggle is currently enabled, the backend is (re)registered immediately.
-    /// This path is a plain pass-through and does NOT use the Claude-Code stealth/fingerprint.
+    /// If `apiKey` is empty and a key is already stored, the existing key is kept and only the base
+    /// URL is updated (so editing the URL does not require re-entering the secret). If the API-key
+    /// toggle is currently enabled, the backend is (re)registered immediately. This path is a plain
+    /// pass-through and does NOT use the Claude-Code stealth/fingerprint.
     func setAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void)
 
     /// Enables or disables the API-key backend. Enabling registers the stored credentials with

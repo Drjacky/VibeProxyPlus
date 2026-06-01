@@ -186,8 +186,8 @@ public final class ProcessDarioHost: DarioHost {
     public func setAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedURL.isEmpty, !trimmedKey.isEmpty else {
-            completion(false, "Base URL and API key are required.")
+        guard !trimmedURL.isEmpty else {
+            completion(false, "Base URL is required.")
             return
         }
         guard let scheme = URL(string: trimmedURL)?.scheme?.lowercased(),
@@ -195,16 +195,23 @@ public final class ProcessDarioHost: DarioHost {
             completion(false, "Base URL must start with http:// or https://")
             return
         }
+        // When the key field is left blank, keep the previously-stored key (so editing just the
+        // base URL doesn't require re-entering the secret).
+        let effectiveKey = trimmedKey.isEmpty ? (credentialStore?.apiKey ?? "") : trimmedKey
+        guard !effectiveKey.isEmpty else {
+            completion(false, "An API key is required.")
+            return
+        }
 
-        credentialStore?.save(baseURL: trimmedURL, apiKey: trimmedKey)
-        logStore.append("Saved Dario API key for \(trimmedURL) (key redacted)")
+        // The store writes Dario's own backend file (~/.dario/backends/claude-api.json) directly,
+        // so no `dario backend add` subprocess is needed. A restart of the proxy is required for
+        // Dario to pick up the change while running.
+        credentialStore?.save(baseURL: trimmedURL, apiKey: effectiveKey)
+        logStore.append("Saved Dario API backend for \(trimmedURL) (key redacted)")
         publishStatus(state: status.state)
 
-        // If the toggle is already on, re-register the backend with the new credentials.
         if credentialStore?.isEnabled == true {
-            registerBackend(baseURL: trimmedURL, apiKey: trimmedKey) { success, message in
-                completion(success, success ? "API key saved and backend updated." : message)
-            }
+            completion(true, "API key saved. Restart the server to apply the change.")
         } else {
             completion(true, "API key saved. Enable \"Use API key\" to route through it.")
         }
@@ -216,49 +223,17 @@ public final class ProcessDarioHost: DarioHost {
             return
         }
         if enabled {
-            guard let baseURL = store.baseURL, let apiKey = store.apiKey, !baseURL.isEmpty, !apiKey.isEmpty else {
+            guard store.hasAPIKey else {
                 completion(false, "Save an API key and base URL first.")
                 return
             }
-            registerBackend(baseURL: baseURL, apiKey: apiKey) { [weak self] success, message in
-                if success {
-                    store.setEnabled(true)
-                    self?.publishStatus(state: self?.status.state ?? .stopped)
-                }
-                completion(success, success ? "API key backend enabled." : message)
-            }
-        } else {
-            removeBackend { [weak self] success, message in
-                // Disabling is best-effort; record the flag regardless so the UI reflects intent.
-                store.setEnabled(false)
-                self?.publishStatus(state: self?.status.state ?? .stopped)
-                completion(success, success ? "API key backend disabled." : message)
-            }
         }
-    }
-
-    // MARK: - Backend registration helpers
-
-    private func registerBackend(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
-        guard FileManager.default.fileExists(atPath: binaryPath) else {
-            completion(false, "Dario binary not found")
-            return
-        }
-        logStore.append("Registering Dario API backend at \(baseURL) (key redacted)")
-        let process = makeProcess(arguments: [
-            "backend", "add", Self.apiBackendName, "--key=\(apiKey)", "--base-url=\(baseURL)"
-        ])
-        runToCompletion(process, timeout: 30, action: "dario backend add", completion: completion)
-    }
-
-    private func removeBackend(completion: @escaping (Bool, String) -> Void) {
-        guard FileManager.default.fileExists(atPath: binaryPath) else {
-            completion(false, "Dario binary not found")
-            return
-        }
-        logStore.append("Removing Dario API backend")
-        let process = makeProcess(arguments: ["backend", "remove", Self.apiBackendName])
-        runToCompletion(process, timeout: 30, action: "dario backend remove", completion: completion)
+        // Enabling/disabling just moves Dario's backend file in/out of the active slot. A running
+        // proxy needs a restart to observe the change.
+        store.setEnabled(enabled)
+        publishStatus(state: status.state)
+        let restartHint = status.state.isRunning ? " Restart the server to apply." : ""
+        completion(true, (enabled ? "API key backend enabled." : "API key backend disabled.") + restartHint)
     }
 
     private func makeProcess(arguments: [String]) -> ManagedProcess {
@@ -273,32 +248,6 @@ public final class ProcessDarioHost: DarioHost {
         )
         return ManagedProcess(configuration: config) { @Sendable line in
             logStore.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
-    }
-
-    private func runToCompletion(_ process: ManagedProcess, timeout: TimeInterval, action: String, completion: @escaping (Bool, String) -> Void) {
-        Task {
-            do {
-                try await process.launch()
-            } catch {
-                completion(false, "Failed to run \(action): \(error)")
-                return
-            }
-            let deadline = Date().addingTimeInterval(timeout)
-            while Date() < deadline {
-                if await process.isRunning == false {
-                    let exit = await process.terminationStatus() ?? -1
-                    if exit == 0 {
-                        completion(true, "\(action) succeeded.")
-                    } else {
-                        completion(false, "\(action) exited with status \(exit). Check the logs.")
-                    }
-                    return
-                }
-                try? await Task.sleep(nanoseconds: 300_000_000)
-            }
-            await process.terminate()
-            completion(false, "\(action) timed out. Try again.")
         }
     }
 

@@ -210,10 +210,17 @@ struct DarioSettingsView: View {
                             Text(line)
                                 .font(.system(.caption, design: .monospaced))
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
                         }
                     }
                 }
                 .frame(height: 160)
+                Button("Copy all logs") {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(model.logLines.joined(separator: "\n"), forType: .string)
+                }
+                .controlSize(.small)
             }
         }
     }
@@ -236,8 +243,13 @@ struct DarioSettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("API key")
                     .font(.caption)
-                SecureField("sk-...", text: $apiKey)
+                SecureField(model.status.apiKeyConfigured ? "Leave blank to keep current key" : "sk-...", text: $apiKey)
                     .textFieldStyle(.roundedBorder)
+                if model.status.apiKeyConfigured {
+                    Text("A key is already saved (hidden for security). Leave this blank to keep it, or type a new key to replace it.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
 
             HStack {
@@ -251,12 +263,19 @@ struct DarioSettingsView: View {
                     saveAPIKey()
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(apiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                          || apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!canSaveAPIKey)
             }
         }
         .padding(20)
         .frame(width: 420)
+    }
+
+    /// Save is allowed when a base URL is present and either a new key was typed or a key is
+    /// already saved (so editing just the base URL is possible without re-entering the secret).
+    private var canSaveAPIKey: Bool {
+        let urlFilled = !apiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let keyTyped = !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return urlFilled && (keyTyped || model.status.apiKeyConfigured)
     }
 
     // MARK: - Actions

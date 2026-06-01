@@ -57,8 +57,13 @@ public final class MockDarioHost: DarioHost {
     public func setAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedURL.isEmpty, !trimmedKey.isEmpty else {
-            completion(false, "Base URL and API key are required.")
+        guard !trimmedURL.isEmpty else {
+            completion(false, "Base URL is required.")
+            return
+        }
+        // Blank key with an existing key keeps the old one (edit-URL-only flow).
+        guard !trimmedKey.isEmpty || apiKeyConfigured else {
+            completion(false, "An API key is required.")
             return
         }
         appendLog("dario backend add (mock) - saved API key for \(trimmedURL)")
