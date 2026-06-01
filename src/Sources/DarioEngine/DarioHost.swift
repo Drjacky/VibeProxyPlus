@@ -56,6 +56,15 @@ public protocol DarioHost: AnyObject {
     /// so this is required before the proxy will serve. Calls completion with success + a message.
     func login(completion: @escaping (Bool, String) -> Void)
 
+    /// Configures an API-key + custom-base-url upstream for Claude (no OAuth subscription needed).
+    ///
+    /// This registers an OpenAI-compatible backend with Dario (`dario backend add`). Unlike the
+    /// OAuth `login` path, requests routed here are a plain pass-through to `baseURL` with the
+    /// supplied key - Dario's Claude-Code stealth/fingerprint does NOT apply to this route. Use it
+    /// when you only have an API key + base URL rather than a Claude Pro/Max subscription.
+    /// Calls completion with success + a user-facing message.
+    func loginWithAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void)
+
     /// Recent log lines for the diagnostics view (most recent last).
     func recentLogLines() -> [String]
 }

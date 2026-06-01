@@ -58,6 +58,24 @@ public final class MockDarioHost: DarioHost {
         completion(true, "Logged in (mock).")
     }
 
+    public func loginWithAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty, !trimmedKey.isEmpty else {
+            completion(false, "Base URL and API key are required.")
+            return
+        }
+        appendLog("dario backend add (mock) - configured API backend at \(trimmedURL)")
+        status = DarioStatusSnapshot(
+            state: status.state,
+            endpoint: endpoint,
+            isLoggedIn: true,
+            backends: ["claude-api"]
+        )
+        onStatusChange?()
+        completion(true, "API backend configured (mock).")
+    }
+
     public func recentLogLines() -> [String] {
         logLines
     }

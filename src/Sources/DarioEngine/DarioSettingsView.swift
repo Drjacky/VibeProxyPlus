@@ -39,6 +39,13 @@ final class DarioSettingsModel: ObservableObject {
             completion(success, message)
         }
     }
+
+    func loginWithAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
+        host.loginWithAPIKey(baseURL: baseURL, apiKey: apiKey) { [weak self] success, message in
+            self?.refresh()
+            completion(success, message)
+        }
+    }
 }
 
 /// The Dario engine's settings surface (Split A).
@@ -52,6 +59,9 @@ struct DarioSettingsView: View {
     @State private var isLoggingIn = false
     @State private var showingLoginResult = false
     @State private var loginResultMessage = ""
+    @State private var showingAPIKeySheet = false
+    @State private var apiBaseURL = ""
+    @State private var apiKey = ""
 
     init(host: DarioHost) {
         _model = StateObject(wrappedValue: DarioSettingsModel(host: host))
@@ -61,6 +71,17 @@ struct DarioSettingsView: View {
         isLoggingIn = true
         model.login { _, message in
             self.isLoggingIn = false
+            self.loginResultMessage = message
+            self.showingLoginResult = true
+        }
+    }
+
+    private func startAPIKeyLogin() {
+        showingAPIKeySheet = false
+        isLoggingIn = true
+        model.loginWithAPIKey(baseURL: apiBaseURL, apiKey: apiKey) { _, message in
+            self.isLoggingIn = false
+            self.apiKey = ""
             self.loginResultMessage = message
             self.showingLoginResult = true
         }
@@ -95,20 +116,38 @@ struct DarioSettingsView: View {
 
                 Section("Claude account") {
                     HStack {
-                        Text("Login")
+                        Text("Status")
                         Spacer()
-                        Text(model.status.isLoggedIn ? "Logged in" : "Not logged in")
+                        Text(model.status.isLoggedIn ? "Authenticated" : "Not authenticated")
                             .foregroundColor(model.status.isLoggedIn ? .green : .secondary)
                         if isLoggingIn {
                             ProgressView().controlSize(.small)
-                        } else {
-                            Button(model.status.isLoggedIn ? "Re-login" : "Login") {
-                                startLogin()
-                            }
-                            .controlSize(.small)
                         }
                     }
-                    Text("Login opens your browser to authenticate your Claude subscription. The proxy will not serve requests until you are logged in.")
+
+                    HStack {
+                        Text("Subscription (OAuth)")
+                        Spacer()
+                        Button(model.status.isLoggedIn ? "Re-login" : "Login") {
+                            startLogin()
+                        }
+                        .controlSize(.small)
+                        .disabled(isLoggingIn)
+                    }
+                    Text("Opens your browser to authenticate a Claude Pro/Max subscription. Uses Dario's full Claude-Code stealth/fingerprint on the upstream request.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    HStack {
+                        Text("API key + base URL")
+                        Spacer()
+                        Button("Login with API key") {
+                            showingAPIKeySheet = true
+                        }
+                        .controlSize(.small)
+                        .disabled(isLoggingIn)
+                    }
+                    Text("Use a custom base URL and API key (no subscription needed). Note: this routes through Dario's OpenAI-compatible passthrough and does NOT apply the Claude-Code stealth/fingerprint.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -158,6 +197,50 @@ struct DarioSettingsView: View {
         } message: {
             Text(loginResultMessage)
         }
+        .sheet(isPresented: $showingAPIKeySheet) {
+            apiKeySheet
+        }
+    }
+
+    private var apiKeySheet: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Login with API key")
+                .font(.headline)
+            Text("Configure a custom Claude-compatible endpoint. This does not require a subscription and does not use Claude-Code stealth.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Base URL")
+                    .font(.caption)
+                TextField("https://api.example.com/v1", text: $apiBaseURL)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("API key")
+                    .font(.caption)
+                SecureField("sk-...", text: $apiKey)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    showingAPIKeySheet = false
+                    apiKey = ""
+                }
+                .keyboardShortcut(.cancelAction)
+                Button("Save") {
+                    startAPIKeyLogin()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(apiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                          || apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
     }
 
     private var statusColor: Color {
@@ -178,4 +261,6 @@ struct DarioSettingsView: View {
         }
     }
 }
+
+
 

@@ -73,4 +73,31 @@ final class DarioEngineTests: XCTestCase {
         XCTAssertTrue(host.status.state.isRunning)
         XCTAssertFalse(host.recentLogLines().isEmpty)
     }
+
+    func testMockLoginWithAPIKeyMarksAuthenticatedAndAddsBackend() {
+        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
+        XCTAssertFalse(host.status.isLoggedIn)
+
+        let done = expectation(description: "api login")
+        host.loginWithAPIKey(baseURL: "https://api.example.com/v1", apiKey: "sk-test-123") { success, _ in
+            XCTAssertTrue(success)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2.0)
+        XCTAssertTrue(host.status.isLoggedIn)
+        XCTAssertEqual(host.status.backends, ["claude-api"])
+    }
+
+    func testMockLoginWithAPIKeyRejectsEmptyInput() {
+        let host = MockDarioHost(endpoint: URL(string: "http://localhost:3456")!)
+
+        let done = expectation(description: "api login rejected")
+        host.loginWithAPIKey(baseURL: "  ", apiKey: "") { success, message in
+            XCTAssertFalse(success)
+            XCTAssertFalse(message.isEmpty)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2.0)
+        XCTAssertFalse(host.status.isLoggedIn)
+    }
 }

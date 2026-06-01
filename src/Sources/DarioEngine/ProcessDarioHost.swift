@@ -20,6 +20,11 @@ public final class ProcessDarioHost: DarioHost {
     /// can direct the user to log in rather than showing a generic failure.
     public static let notLoggedInReason = "Dario is not logged in. Open Settings and tap Login to authenticate, then start the server."
 
+    /// Backend name used for the API-key + custom-base-url upstream registered via
+    /// `dario backend add`. A fixed name so re-running login overwrites the same entry rather than
+    /// accumulating duplicates (Dario supports a single OpenAI-compat backend at a time).
+    public static let apiBackendName = "claude-api"
+
     public private(set) var status: DarioStatusSnapshot
     public var onStatusChange: (() -> Void)?
 
@@ -187,6 +192,74 @@ public final class ProcessDarioHost: DarioHost {
             }
             await loginProcess.terminate()
             completion(false, "dario login timed out. Try again.")
+        }
+    }
+
+    public func loginWithAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
+        guard FileManager.default.fileExists(atPath: binaryPath) else {
+            completion(false, "Dario binary not found")
+            return
+        }
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty, !trimmedKey.isEmpty else {
+            completion(false, "Base URL and API key are required.")
+            return
+        }
+        guard let scheme = URL(string: trimmedURL)?.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            completion(false, "Base URL must start with http:// or https://")
+            return
+        }
+
+        // Register an OpenAI-compatible backend with Dario. Note: this path is a plain pass-through
+        // (no Claude-Code stealth/fingerprint); it exists for users with an API key + base URL
+        // rather than a Claude subscription. The key is logged via the redactor, never raw.
+        logStore.append("Configuring Dario API backend at \(trimmedURL) (key redacted)")
+
+        var environment: [String: String] = ["VIBEPROXY_ENGINE": "dario"]
+        if let home = ProcessInfo.processInfo.environment["HOME"] { environment["HOME"] = home }
+        if let path = ProcessInfo.processInfo.environment["PATH"] { environment["PATH"] = path }
+
+        let logStore = self.logStore
+        let config = ManagedProcessConfiguration(
+            executablePath: binaryPath,
+            arguments: ["backend", "add", Self.apiBackendName, "--key=\(trimmedKey)", "--base-url=\(trimmedURL)"],
+            environment: environment
+        )
+        let process = ManagedProcess(configuration: config) { @Sendable line in
+            logStore.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        Task {
+            do {
+                try await process.launch()
+            } catch {
+                completion(false, "Failed to run dario backend add: \(error)")
+                return
+            }
+            let deadline = Date().addingTimeInterval(30)
+            while Date() < deadline {
+                if await process.isRunning == false {
+                    let exit = await process.terminationStatus() ?? -1
+                    if exit == 0 {
+                        self.status = DarioStatusSnapshot(
+                            state: self.status.state,
+                            endpoint: self.endpoint,
+                            isLoggedIn: true,
+                            backends: self.status.backends
+                        )
+                        self.onStatusChange?()
+                        completion(true, "API backend configured. Start the server to use it. Note: the API path does not use Claude-Code stealth.")
+                    } else {
+                        completion(false, "dario backend add exited with status \(exit). Check the logs.")
+                    }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+            await process.terminate()
+            completion(false, "Configuring the API backend timed out. Try again.")
         }
     }
 
