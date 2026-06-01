@@ -5,14 +5,14 @@ import Diagnostics
 
 /// Real `DarioHost` backed by the bundled `dario` binary via `ProcessRuntime.ManagedProcess`.
 ///
-/// Runtime facts derived from askalf/dario (see the Phase 5 appendix in
-/// plans/dario-integration-architecture.md):
+/// Dario runtime contract:
 /// - `dario proxy --port <p> --host 127.0.0.1` starts the local proxy.
 /// - `GET /health` (unauthenticated) is the readiness probe.
-/// - `dario` reads/writes `~/.dario`; we leave HOME intact so it finds its config + credentials.
-/// - IMPORTANT: `dario proxy` refuses to serve and exits with "Not authenticated" until the user
-///   has run `dario login`. The host treats that as a distinct, user-actionable state rather than a
-///   crash, so the UI can prompt the user to log in.
+/// - `dario` reads/writes `~/.dario`; HOME is preserved so it finds its config and credentials.
+/// - `dario login` authenticates a Claude subscription via OAuth.
+/// - `dario proxy` refuses to serve and exits with "Not authenticated" until `dario login` has
+///   run. The host classifies that as a distinct, user-actionable failure (not a crash) so the UI
+///   can prompt the user to log in.
 @MainActor
 public final class ProcessDarioHost: DarioHost {
     /// User-facing reason shown when `dario proxy` refuses to serve because no Claude account is

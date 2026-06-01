@@ -2,16 +2,14 @@
 # Build the Dario engine into a single self-contained macOS binary and install it into
 # src/Sources/CLIProxyMenuBar/Resources/ (not in git; built at build time).
 #
-# Dario (askalf/dario, npm @askalf/dario) is a pure-ESM Node.js project with no prebuilt
-# binary release, so we compile one ourselves with Bun's `--compile`. Dario prefers the Bun
-# runtime for TLS wire-fidelity, so a Bun-compiled binary is the natural fit.
+# Dario (askalf/dario, npm @askalf/dario) is a pure-ESM Node.js project with no prebuilt binary
+# release, so the binary is compiled with Bun's `--compile`. Dario relies on the Bun runtime for
+# TLS wire-fidelity, so a Bun-compiled binary matches its runtime requirements.
 #
 # Bun --compile only embeds statically-analyzable assets. Dario reads its bundled
 # cc-template-data.json at runtime via `readFileSync(join(__dirname, 'cc-template-data.json'))`,
-# which --compile rewrites to a non-existent /$bunfs/root path. We apply a tiny, verifiable
-# pre-compile patch to that single read so the asset is embedded as a `with { type: "file" }`
-# import. This recipe was validated empirically: `dario doctor` and `dario proxy` both run from
-# the compiled binary and load the template correctly.
+# which --compile rewrites to a non-existent /$bunfs/root path. A pre-compile patch redirects that
+# single read to a `with { type: "file" }` import so the asset is embedded and resolvable.
 #
 # Prerequisites (build/CI machine only, never the end user's machine): Bun, Node >=18, git.
 
@@ -78,8 +76,8 @@ npm run build >/dev/null 2>&1
 
 # --- Targeted asset-embedding patch (see header) ---
 # Embed cc-template-data.json as a Bun file import and redirect the single runtime read at
-# dist/live-fingerprint.js to the embedded copy. Fail loudly if the expected read is absent
-# (Dario changed shape) rather than silently shipping a broken binary.
+# dist/live-fingerprint.js to the embedded copy. Abort if the expected read is absent, which
+# indicates Dario's source layout changed and the patch needs updating.
 LF="dist/live-fingerprint.js"
 if ! grep -q "join(__dirname, 'cc-template-data.json')" "$LF"; then
   echo "ERROR: expected cc-template-data.json read not found in $LF. Dario layout changed; update fetch-dario.sh." >&2
@@ -112,3 +110,4 @@ shasum -a 256 "$TARGET_FILE" | awk '{print $1}' > "$TARGET_FILE.sha256"
 file "$TARGET_FILE"
 echo "Installed dario $(installed_version) ($(wc -c < "$TARGET_FILE" | tr -d ' ') bytes) to $TARGET_FILE"
 echo "Checksum: $(cat "$TARGET_FILE.sha256")"
+

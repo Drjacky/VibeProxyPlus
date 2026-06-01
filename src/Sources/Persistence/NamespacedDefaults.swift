@@ -6,7 +6,7 @@ import EngineKit
 /// Engine preferences live in a dedicated suite (`suiteName`) so keys from different engines
 /// can never collide or be read across boundaries. The shell uses the standard domain with a
 /// `shell.` key prefix. Reads and writes go through this type so scoping is enforced in one
-/// place (see plans/dario-integration-architecture.md, Sections 26-27).
+/// place.
 public final class NamespacedDefaults {
     private let defaults: UserDefaults
     private let keyPrefix: String

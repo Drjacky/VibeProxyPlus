@@ -125,7 +125,7 @@ struct DarioSettingsView: View {
                 }
 
                 Section("Routing, DNS, and networking") {
-                    Text("These are application-level proxy settings owned by Dario (config.json under ~/.dario). The native editor is under construction.")
+                    Text("These proxy settings are managed by Dario in config.json under ~/.dario and are not editable from this screen.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -1,8 +1,8 @@
 // CLIProxyEngine
 //
-// Fully isolated implementation of the cliproxyapiplus engine. The existing
-// ServerManager/ThinkingProxy/TunnelManager/config/stores/SettingsView code migrates
-// into this module in Phase 2 behind the EngineKit contracts.
+// Isolated implementation of the cliproxyapiplus engine: ServerManager, ThinkingProxy,
+// TunnelManager, config composition, credential stores, and the settings UI, exposed to the
+// shell through the EngineKit contracts.
 //
 // ISOLATION INVARIANT: this module must NEVER import DarioEngine.
 //

@@ -13,8 +13,8 @@ public enum KeychainError: Error, Equatable {
 /// A generic-password Keychain accessor whose service identifier is scoped to one engine.
 ///
 /// Every item is stored under the service `"<servicePrefix>.<engineID>"`, so one engine can
-/// never read or overwrite another engine's secrets (see plans/dario-integration-architecture.md,
-/// Section 28). The `account` argument distinguishes individual secrets within an engine.
+/// never read or overwrite another engine's secrets. The `account` argument distinguishes
+/// individual secrets within an engine.
 public final class KeychainStore {
     /// The fully-qualified Keychain service string used for every item.
     public let service: String

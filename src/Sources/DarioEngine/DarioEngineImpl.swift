@@ -4,11 +4,9 @@ import EngineKit
 
 /// The Dario engine, conforming to the shared `Engine` contract.
 ///
-/// Phase 5 Split A: lifecycle and UI are driven by a `DarioHost` abstraction with a mock
-/// implementation, so the full Dario settings surface and the engine-switch flow are reviewable
-/// before the real `dario proxy` subprocess integration (Split B). The contract surface and UI do
-/// not change when the real host is swapped in. On-disk home is ~/.dario; default endpoint
-/// http://localhost:3456 (see the Phase 5 appendix in plans/dario-integration-architecture.md).
+/// Lifecycle and UI are driven by a `DarioHost` abstraction: `ProcessDarioHost` runs the bundled
+/// `dario` binary, and `MockDarioHost` is used when no binary is bundled. On-disk home is
+/// ~/.dario; the local proxy endpoint is http://localhost:3456.
 @MainActor
 public final class DarioEngineImpl: Engine {
     public static let descriptor = EngineDescriptor(

@@ -1,10 +1,8 @@
 // Persistence
 //
-// Namespaced storage primitives shared by engines: NamespacedDefaults, KeychainStore,
-// EngineDirectoryLayout (per-engine dotfolders such as ~/.cli-proxy-api and ~/.dario),
-// FileStore. Depends on EngineKit only.
-//
-// Populated in Phase 1 (see plans/dario-integration-architecture.md, Sections 26-32).
+// Namespaced storage primitives shared by engines: NamespacedDefaults, KeychainStore, and
+// EngineDirectoryLayout (per-engine dotfolders such as ~/.cli-proxy-api and ~/.dario).
+// Depends on EngineKit only.
 
 import Foundation
 import EngineKit

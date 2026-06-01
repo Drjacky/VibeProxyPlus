@@ -2,8 +2,7 @@ import Foundation
 
 /// Persists which engine the application should boot into, plus switch bookkeeping.
 ///
-/// The selected engine survives launches, upgrades, and reboots (see
-/// plans/dario-integration-architecture.md Sections 8, 22, 26). A relaunch generation counter
+/// The selected engine survives launches, upgrades, and reboots. A relaunch generation counter
 /// and timestamp guard against relaunch loops when a switch repeatedly fails to come up clean.
 public final class EngineSelectionStore {
     private enum Key {

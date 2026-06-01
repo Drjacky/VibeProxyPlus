@@ -3,8 +3,7 @@ import Foundation
 /// Detects whether the previous application run terminated abnormally (a crash, force-quit, or
 /// power loss) so the shell can offer a "safe mode" boot with the engine left stopped.
 ///
-/// The mechanism is a persisted "clean-shutdown" flag (see
-/// plans/dario-integration-architecture.md Sections 71-74). At boot the shell calls
+/// The mechanism is a persisted "clean-shutdown" flag. At boot the shell calls
 /// `markBootStarted()` which records that a run is in progress. On a clean termination the shell
 /// calls `markCleanShutdown()`. If, at the next boot, the in-progress flag is still set, the
 /// previous run never reached its clean-shutdown path and is treated as a crash.

@@ -1,8 +1,7 @@
 // DarioEngine
 //
-// Fully isolated implementation of the Dario engine (bundled local subprocess HTTP proxy).
-// Implemented in Phase 5: DarioHost, config resolver, health probe, logs, routing/DNS/
-// profiles/import-export/diagnostics UI. On-disk home is ~/.dario.
+// Isolated implementation of the Dario engine: a bundled local subprocess HTTP proxy with its
+// own settings UI, health probe, and logs. On-disk home is ~/.dario.
 //
 // ISOLATION INVARIANT: this module must NEVER import CLIProxyEngine.
 //

@@ -7,8 +7,8 @@ import Darwin
 
 /// Checks availability of localhost TCP ports for engine subprocesses.
 ///
-/// Engines bind to `127.0.0.1` only (see plans/dario-integration-architecture.md, Sections 23, 84).
-/// Before launching, an engine asks the allocator whether its declared port is free; if a foreign
+/// Engines bind to `127.0.0.1` only. Before launching, an engine asks the allocator whether its
+/// declared port is free; if a foreign
 /// process holds it, startup fails loudly rather than silently colliding.
 public enum PortAllocator {
     /// Returns true if the given TCP port can currently be bound on 127.0.0.1.

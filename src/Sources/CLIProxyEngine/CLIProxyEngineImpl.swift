@@ -5,9 +5,9 @@ import EngineKit
 /// The cliproxyapiplus engine, conforming to the shared `Engine` contract.
 ///
 /// Encapsulates the ThinkingProxy + ServerManager orchestration (readiness polling, Vercel
-/// config sync, ordered start/stop) that previously lived in the app delegate, so the shell
-/// only deals with the engine contract. Behavior is preserved from the original AppDelegate
-/// implementation (ports 8317/8318, ordered startup, proxy-first shutdown).
+/// config sync, ordered start/stop) so the shell only deals with the engine contract. The
+/// ThinkingProxy listens on port 8317 and fronts the backend on 8318; startup is ordered
+/// (proxy first, then backend) and shutdown is proxy-first.
 @MainActor
 public final class CLIProxyEngineImpl: Engine {
     public static let descriptor = EngineDescriptor(

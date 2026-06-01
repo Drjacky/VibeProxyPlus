@@ -5,8 +5,8 @@ import Foundation
 /// Engines stream subprocess output (and the app logs lifecycle events) into `LogStore`; some of
 /// that text can contain bearer tokens, API keys, or JWTs. The scrubber applies a set of
 /// conservative regular expressions that replace the secret portion with a fixed marker while
-/// leaving surrounding context intact (see plans/dario-integration-architecture.md Sections 78,
-/// 84, 100). It errs toward over-redaction: a few false positives are acceptable; a leaked secret
+/// leaving surrounding context intact. It errs toward over-redaction: a few false positives are
+/// acceptable; a leaked secret
 /// is not.
 public enum SecretScrubber {
     /// Replacement marker substituted for any matched secret.

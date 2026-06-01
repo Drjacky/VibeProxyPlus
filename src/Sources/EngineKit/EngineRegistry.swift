@@ -2,10 +2,10 @@ import Foundation
 
 /// The single list of engines the application knows how to build.
 ///
-/// AppShell registers each engine's descriptor and a factory closure at boot. Adding a new
-/// engine is a new module plus one `register` call (see plans/dario-integration-architecture.md
-/// Section 53). The registry never imports a concrete engine module; factories are supplied by
-/// the shell, which is the only component allowed to depend on both engines.
+/// The shell registers each engine's descriptor and a factory closure at boot. Adding a new
+/// engine is a new module plus one `register` call. The registry never imports a concrete engine
+/// module; factories are supplied by the shell, which is the only component allowed to depend on
+/// both engines.
 @MainActor
 public final class EngineRegistry {
     /// Builds an engine instance from a context.

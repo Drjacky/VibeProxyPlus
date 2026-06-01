@@ -3,10 +3,9 @@ import EngineKit
 
 /// Finds and terminates orphaned engine subprocesses left behind by a previous run or crash.
 ///
-/// Unlike the original broad `pkill -f cli-proxy-api-plus`, reaping is scoped per engine via a
-/// unique environment marker so one engine never kills another engine's (or an unrelated)
-/// process (see plans/dario-integration-architecture.md, Sections 9, 23, 112). The marker is an
-/// environment variable name that a managed process sets; `pgrep -f` matches it in the argument
+/// Reaping is scoped per engine via a unique environment marker so one engine never kills another
+/// engine's (or an unrelated) process. The marker is an environment variable name that a managed
+/// process sets; `pgrep -f` matches it in the argument
 /// and environment listing.
 public struct OrphanReaper {
     /// The environment marker substring identifying processes owned by this engine.

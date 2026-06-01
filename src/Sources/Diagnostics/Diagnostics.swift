@@ -1,9 +1,7 @@
 // Diagnostics
 //
-// Observability primitives shared by engines: LogStore, HealthMonitor, CrashReporter,
-// Telemetry, DiagnosticsBundle, SecretScrubber. Depends on EngineKit only.
-//
-// Populated in Phase 1/6 (see plans/dario-integration-architecture.md, Sections 31, 64-70).
+// Observability primitives shared by engines: LogStore and SecretScrubber.
+// Depends on EngineKit only.
 
 import Foundation
 import EngineKit

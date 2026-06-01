@@ -1,9 +1,7 @@
 // ProcessRuntime
 //
-// Hardened subprocess lifecycle primitives shared by engines: ManagedProcess,
-// PortAllocator, ProcessSupervisor, OrphanReaper. Depends on EngineKit only.
-//
-// Populated in Phase 1 (see plans/dario-integration-architecture.md, Sections 9-10).
+// Hardened subprocess lifecycle primitives shared by engines: ManagedProcess, PortAllocator,
+// and OrphanReaper. Depends on EngineKit only.
 
 import Foundation
 import EngineKit

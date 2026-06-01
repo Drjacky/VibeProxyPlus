@@ -39,10 +39,8 @@ public struct ManagedProcessConfiguration: Sendable {
 /// A hardened wrapper around `Process` with single-owner semantics, async lifecycle, and
 /// deterministic teardown.
 ///
-/// Extracted and generalized from the original ServerManager subprocess handling
-/// (see plans/dario-integration-architecture.md, Sections 9, 48, 51). Output pipe handlers are
-/// always cleared on termination to avoid the readability-handler leak the original code guarded
-/// against, and stop uses SIGTERM with a timeout before falling back to SIGKILL.
+/// Output pipe handlers are always cleared on termination to avoid a readability-handler leak,
+/// and stop uses SIGTERM with a timeout before falling back to SIGKILL.
 public actor ManagedProcess {
     private let configuration: ManagedProcessConfiguration
     private let onOutputLine: (@Sendable (String) -> Void)?

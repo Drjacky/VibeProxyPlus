@@ -6,8 +6,7 @@ import SwiftUI
 /// EngineKit is the contract sink (Foundation only), so the context carries plain values
 /// rather than concrete Persistence/Diagnostics types. The shell derives those primitives
 /// (per-engine dotfolder, defaults suite name, Keychain service prefix) from the engine id and
-/// the engine builds its own storage objects from them. See plans/dario-integration-architecture.md
-/// Sections 4, 26-28.
+/// the engine builds its own storage objects from them.
 public struct EngineContext: Sendable {
     /// The engine this context belongs to.
     public let engineID: EngineID
@@ -34,9 +33,8 @@ public struct EngineContext: Sendable {
 /// The contract every engine implements. The shell interacts with the active engine only
 /// through this protocol, never through concrete engine types.
 ///
-/// Lifecycle methods are callback-based and `@MainActor` to match the existing UI-driven code;
-/// a later phase may migrate to async/await. The shell owns menu/window chrome and asks the
-/// engine for its settings surface, status, and lifecycle transitions.
+/// Lifecycle methods are callback-based and `@MainActor`. The shell owns menu/window chrome and
+/// asks the engine for its settings surface, status, and lifecycle transitions.
 @MainActor
 public protocol Engine: AnyObject {
     /// Static metadata describing this engine type.

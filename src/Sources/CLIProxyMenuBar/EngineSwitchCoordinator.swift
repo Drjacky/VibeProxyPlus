@@ -3,8 +3,8 @@ import EngineKit
 
 /// Orchestrates a full-relaunch engine switch from the shell.
 ///
-/// Flow (see plans/dario-integration-architecture.md Sections 8, 21): present a detailed
-/// confirmation dialog -> on confirm, shut the active engine down cleanly -> persist the new
+/// Flow: present a detailed confirmation dialog -> on confirm, shut the active engine down
+/// cleanly -> persist the new
 /// selection and mark the switch pending -> relaunch the app, which boots into the new engine.
 /// The coordinator lives in the shell and never inside an engine.
 @MainActor

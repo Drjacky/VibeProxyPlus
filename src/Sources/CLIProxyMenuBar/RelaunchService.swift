@@ -2,9 +2,8 @@ import AppKit
 
 /// Relaunches the application as a fresh process, then terminates the current one.
 ///
-/// A full relaunch is the production engine-switch mechanism (see
-/// plans/dario-integration-architecture.md Sections 8, 22): it guarantees no engine-specific
-/// runtime state survives the transition. The new instance is launched detached so it outlives
+/// A full relaunch is the engine-switch mechanism: it guarantees no engine-specific runtime
+/// state survives the transition. The new instance is launched detached so it outlives
 /// the terminating process.
 @MainActor
 enum RelaunchService {

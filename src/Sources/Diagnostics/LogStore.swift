@@ -5,7 +5,7 @@ import EngineKit
 ///
 /// When `count` reaches capacity, appending a new element overwrites the element at the
 /// logical head and advances both head and tail, so the buffer always holds the most recent
-/// `capacity` elements. Generalized from the engine log buffer in the original ServerManager.
+/// `capacity` elements.
 struct RingBuffer<Element> {
     private var storage: [Element?]
     private var head = 0
@@ -78,7 +78,7 @@ public final class LogStore: @unchecked Sendable {
 
     /// - Parameters:
     ///   - scope: A short label included in each line (for example the engine id or "shell").
-    ///   - capacity: Maximum number of retained lines. Defaults to 1000 (the original cap).
+    ///   - capacity: Maximum number of retained lines. Defaults to 1000.
     public init(scope: String, capacity: Int = 1000) {
         self.scope = scope
         self.buffer = RingBuffer(capacity: capacity)
@@ -129,3 +129,4 @@ public final class LogStore: @unchecked Sendable {
         lock.unlock()
     }
 }
+

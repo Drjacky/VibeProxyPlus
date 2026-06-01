@@ -69,9 +69,8 @@ let package = Package(
 
         // MARK: - Application executable
 
-        // Existing menu bar app. In Phase 0 this remains the monolith that owns all
-        // current behavior; later phases migrate its code into the modules above and
-        // turn this into the thin AppShell that registers both engines.
+        // The menu bar app shell. Registers both engines and hosts the active one; depends on
+        // both engine modules (the only target allowed to).
         .executableTarget(
             name: "CLIProxyMenuBar",
             dependencies: ["Sparkle", "EngineKit", "CLIProxyEngine", "DarioEngine"],
