@@ -10,31 +10,30 @@ import Diagnostics
 /// - `dario proxy --port <p> --host 127.0.0.1` starts the local proxy.
 /// - `GET /health` (unauthenticated) is the readiness probe.
 /// - `dario` reads/writes `~/.dario`; we leave HOME intact so it finds its config + credentials.
-/// - IMPORTANT: `dario proxy` refuses to serve and exits with "Not authenticated" until the user
-///   has run `dario login`. The host treats that as a distinct, user-actionable state (notLoggedIn)
-///   rather than a crash, so the UI can prompt the user to log in.
+/// - `dario login` authenticates a Claude Pro/Max subscription via OAuth (the stealth path).
+/// - `dario backend add/remove` manages an OpenAI-compatible api-key + base-url upstream (no
+///   stealth). The stored key is persisted by `DarioCredentialStore` so the enable/disable toggle
+///   can register/unregister the backend without the user re-entering it.
 @MainActor
 public final class ProcessDarioHost: DarioHost {
-    /// User-facing reason shown when `dario proxy` refuses to serve because no Claude account is
-    /// logged in. The engine surfaces this through `startFailureReason` so the shell notification
-    /// can direct the user to log in rather than showing a generic failure.
-    public static let notLoggedInReason = "Dario is not logged in. Open Settings and tap Login to authenticate, then start the server."
-
-    /// Backend name used for the API-key + custom-base-url upstream registered via
-    /// `dario backend add`. A fixed name so re-running login overwrites the same entry rather than
-    /// accumulating duplicates (Dario supports a single OpenAI-compat backend at a time).
+    /// Backend name used for the API-key upstream registered via `dario backend add`. A fixed name
+    /// so re-saving overwrites the same entry (Dario supports a single OpenAI-compat backend).
     public static let apiBackendName = "claude-api"
 
     public private(set) var status: DarioStatusSnapshot
     public var onStatusChange: (() -> Void)?
+
+    /// Persists the api-key backend credentials + enabled flag. Set by the engine on activation.
+    public var credentialStore: DarioCredentialStore? {
+        didSet { refreshAuthStateFromStore() }
+    }
 
     private let binaryPath: String
     private let port: UInt16
     private let endpoint: URL
     private let logStore: LogStore
     private var process: ManagedProcess?
-    /// Env marker so OrphanReaper can target only this engine's stray processes.
-    private let engineMarker = "VIBEPROXY_ENGINE=dario"
+    private var subscriptionLoggedIn = false
 
     public init(binaryPath: String, port: UInt16 = 3456) {
         self.binaryPath = binaryPath
@@ -44,19 +43,27 @@ public final class ProcessDarioHost: DarioHost {
         self.status = DarioStatusSnapshot(
             state: .stopped,
             endpoint: endpoint,
-            isLoggedIn: false,
+            isSubscriptionLoggedIn: false,
+            apiKeyConfigured: false,
+            apiKeyEnabled: false,
             backends: []
         )
     }
 
+    public var savedAPIBaseURL: String? { credentialStore?.baseURL }
+
+    private func refreshAuthStateFromStore() {
+        publishStatus(state: status.state)
+    }
+
     public func start(completion: @escaping (Bool) -> Void) {
         guard FileManager.default.fileExists(atPath: binaryPath) else {
-            update(state: .failed("Dario binary not found"))
+            publishStatus(state: .failed("Dario binary not found"))
             completion(false)
             return
         }
 
-        update(state: .starting)
+        publishStatus(state: .starting)
         logStore.append("Starting dario proxy on \(endpoint.absoluteString)")
 
         var environment = ["VIBEPROXY_ENGINE": "dario", "DARIO_PORT": String(port)]
@@ -80,12 +87,10 @@ public final class ProcessDarioHost: DarioHost {
             do {
                 try await process.launch()
             } catch {
-                self.update(state: .failed("Failed to launch dario: \(error)"))
+                self.publishStatus(state: .failed("Failed to launch dario: \(error)"))
                 completion(false)
                 return
             }
-            // Poll /health for readiness. If the process exits early with "Not authenticated",
-            // surface notLoggedIn instead of a generic failure.
             await self.pollReadiness(process: process, completion: completion)
         }
     }
@@ -97,28 +102,26 @@ public final class ProcessDarioHost: DarioHost {
             if await process.isRunning == false {
                 let log = logStore.snapshot().joined(separator: "\n")
                 if log.contains("Not authenticated") {
-                    status = DarioStatusSnapshot(state: .failed(Self.notLoggedInReason), endpoint: endpoint, isLoggedIn: false, backends: status.backends)
-                    onStatusChange?()
-                    logStore.append("dario is not logged in. Run Login from Dario settings.")
+                    subscriptionLoggedIn = false
+                    publishStatus(state: .failed(notAuthenticatedReason))
+                    logStore.append(notAuthenticatedReason)
                     completion(false)
                     return
                 }
-                update(state: .failed("dario exited before becoming ready"))
+                publishStatus(state: .failed("dario exited before becoming ready"))
                 completion(false)
                 return
             }
             if await probeHealth() {
-                update(state: .running)
-                status = DarioStatusSnapshot(state: .running, endpoint: endpoint, isLoggedIn: true, backends: status.backends)
+                publishStatus(state: .running)
                 logStore.append("dario proxy ready - /health OK")
                 completion(true)
                 return
             }
             try? await Task.sleep(nanoseconds: 300_000_000)
         }
-        // Timed out waiting for readiness; stop the process to keep state consistent.
         await process.terminate()
-        update(state: .failed("dario did not become ready within timeout"))
+        publishStatus(state: .failed("dario did not become ready within timeout"))
         completion(false)
     }
 
@@ -140,7 +143,7 @@ public final class ProcessDarioHost: DarioHost {
         Task {
             await process?.terminate()
             self.process = nil
-            self.update(state: .stopped)
+            self.publishStatus(state: .stopped)
             completion()
         }
     }
@@ -152,37 +155,22 @@ public final class ProcessDarioHost: DarioHost {
         }
         logStore.append("Running dario login - complete the browser flow to authenticate")
 
-        var environment: [String: String] = ["VIBEPROXY_ENGINE": "dario"]
-        if let home = ProcessInfo.processInfo.environment["HOME"] { environment["HOME"] = home }
-        if let path = ProcessInfo.processInfo.environment["PATH"] { environment["PATH"] = path }
-
-        let logStore = self.logStore
-        let loginConfig = ManagedProcessConfiguration(
-            executablePath: binaryPath,
-            arguments: ["login"],
-            environment: environment
-        )
-        let loginProcess = ManagedProcess(configuration: loginConfig) { @Sendable line in
-            logStore.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
-
+        let process = makeProcess(arguments: ["login"])
         Task {
             do {
-                try await loginProcess.launch()
+                try await process.launch()
             } catch {
                 completion(false, "Failed to start dario login: \(error)")
                 return
             }
-            // dario login opens a browser and exits when the OAuth flow completes (or is cancelled).
-            // Poll for the process to finish, then report based on exit status.
             let deadline = Date().addingTimeInterval(180)
             while Date() < deadline {
-                if await loginProcess.isRunning == false {
-                    let exit = await loginProcess.terminationStatus() ?? -1
+                if await process.isRunning == false {
+                    let exit = await process.terminationStatus() ?? -1
                     if exit == 0 {
-                        self.status = DarioStatusSnapshot(state: self.status.state, endpoint: self.endpoint, isLoggedIn: true, backends: self.status.backends)
-                        self.onStatusChange?()
-                        completion(true, "Logged in to Dario.")
+                        self.subscriptionLoggedIn = true
+                        self.publishStatus(state: self.status.state)
+                        completion(true, "Logged in to your Claude subscription.")
                     } else {
                         completion(false, "dario login exited with status \(exit). Check the logs.")
                     }
@@ -190,16 +178,12 @@ public final class ProcessDarioHost: DarioHost {
                 }
                 try? await Task.sleep(nanoseconds: 500_000_000)
             }
-            await loginProcess.terminate()
+            await process.terminate()
             completion(false, "dario login timed out. Try again.")
         }
     }
 
-    public func loginWithAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
-        guard FileManager.default.fileExists(atPath: binaryPath) else {
-            completion(false, "Dario binary not found")
-            return
-        }
+    public func setAPIKey(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedURL.isEmpty, !trimmedKey.isEmpty else {
@@ -212,54 +196,109 @@ public final class ProcessDarioHost: DarioHost {
             return
         }
 
-        // Register an OpenAI-compatible backend with Dario. Note: this path is a plain pass-through
-        // (no Claude-Code stealth/fingerprint); it exists for users with an API key + base URL
-        // rather than a Claude subscription. The key is logged via the redactor, never raw.
-        logStore.append("Configuring Dario API backend at \(trimmedURL) (key redacted)")
+        credentialStore?.save(baseURL: trimmedURL, apiKey: trimmedKey)
+        logStore.append("Saved Dario API key for \(trimmedURL) (key redacted)")
+        publishStatus(state: status.state)
 
+        // If the toggle is already on, re-register the backend with the new credentials.
+        if credentialStore?.isEnabled == true {
+            registerBackend(baseURL: trimmedURL, apiKey: trimmedKey) { success, message in
+                completion(success, success ? "API key saved and backend updated." : message)
+            }
+        } else {
+            completion(true, "API key saved. Enable \"Use API key\" to route through it.")
+        }
+    }
+
+    public func setAPIKeyEnabled(_ enabled: Bool, completion: @escaping (Bool, String) -> Void) {
+        guard let store = credentialStore else {
+            completion(false, "Credential storage unavailable.")
+            return
+        }
+        if enabled {
+            guard let baseURL = store.baseURL, let apiKey = store.apiKey, !baseURL.isEmpty, !apiKey.isEmpty else {
+                completion(false, "Save an API key and base URL first.")
+                return
+            }
+            registerBackend(baseURL: baseURL, apiKey: apiKey) { [weak self] success, message in
+                if success {
+                    store.setEnabled(true)
+                    self?.publishStatus(state: self?.status.state ?? .stopped)
+                }
+                completion(success, success ? "API key backend enabled." : message)
+            }
+        } else {
+            removeBackend { [weak self] success, message in
+                // Disabling is best-effort; record the flag regardless so the UI reflects intent.
+                store.setEnabled(false)
+                self?.publishStatus(state: self?.status.state ?? .stopped)
+                completion(success, success ? "API key backend disabled." : message)
+            }
+        }
+    }
+
+    // MARK: - Backend registration helpers
+
+    private func registerBackend(baseURL: String, apiKey: String, completion: @escaping (Bool, String) -> Void) {
+        guard FileManager.default.fileExists(atPath: binaryPath) else {
+            completion(false, "Dario binary not found")
+            return
+        }
+        logStore.append("Registering Dario API backend at \(baseURL) (key redacted)")
+        let process = makeProcess(arguments: [
+            "backend", "add", Self.apiBackendName, "--key=\(apiKey)", "--base-url=\(baseURL)"
+        ])
+        runToCompletion(process, timeout: 30, action: "dario backend add", completion: completion)
+    }
+
+    private func removeBackend(completion: @escaping (Bool, String) -> Void) {
+        guard FileManager.default.fileExists(atPath: binaryPath) else {
+            completion(false, "Dario binary not found")
+            return
+        }
+        logStore.append("Removing Dario API backend")
+        let process = makeProcess(arguments: ["backend", "remove", Self.apiBackendName])
+        runToCompletion(process, timeout: 30, action: "dario backend remove", completion: completion)
+    }
+
+    private func makeProcess(arguments: [String]) -> ManagedProcess {
         var environment: [String: String] = ["VIBEPROXY_ENGINE": "dario"]
         if let home = ProcessInfo.processInfo.environment["HOME"] { environment["HOME"] = home }
         if let path = ProcessInfo.processInfo.environment["PATH"] { environment["PATH"] = path }
-
         let logStore = self.logStore
         let config = ManagedProcessConfiguration(
             executablePath: binaryPath,
-            arguments: ["backend", "add", Self.apiBackendName, "--key=\(trimmedKey)", "--base-url=\(trimmedURL)"],
+            arguments: arguments,
             environment: environment
         )
-        let process = ManagedProcess(configuration: config) { @Sendable line in
+        return ManagedProcess(configuration: config) { @Sendable line in
             logStore.append(line.trimmingCharacters(in: .whitespacesAndNewlines))
         }
+    }
 
+    private func runToCompletion(_ process: ManagedProcess, timeout: TimeInterval, action: String, completion: @escaping (Bool, String) -> Void) {
         Task {
             do {
                 try await process.launch()
             } catch {
-                completion(false, "Failed to run dario backend add: \(error)")
+                completion(false, "Failed to run \(action): \(error)")
                 return
             }
-            let deadline = Date().addingTimeInterval(30)
+            let deadline = Date().addingTimeInterval(timeout)
             while Date() < deadline {
                 if await process.isRunning == false {
                     let exit = await process.terminationStatus() ?? -1
                     if exit == 0 {
-                        self.status = DarioStatusSnapshot(
-                            state: self.status.state,
-                            endpoint: self.endpoint,
-                            isLoggedIn: true,
-                            backends: self.status.backends
-                        )
-                        self.onStatusChange?()
-                        completion(true, "API backend configured. Start the server to use it. Note: the API path does not use Claude-Code stealth.")
+                        completion(true, "\(action) succeeded.")
                     } else {
-                        completion(false, "dario backend add exited with status \(exit). Check the logs.")
+                        completion(false, "\(action) exited with status \(exit). Check the logs.")
                     }
                     return
                 }
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
             await process.terminate()
-            completion(false, "Configuring the API backend timed out. Try again.")
+            completion(false, "\(action) timed out. Try again.")
         }
     }
 
@@ -267,14 +306,23 @@ public final class ProcessDarioHost: DarioHost {
         logStore.snapshot()
     }
 
-    private func update(state: DarioConnectionState) {
+    /// User-facing reason shown when `dario proxy` refuses to serve because no usable auth exists.
+    private var notAuthenticatedReason: String {
+        if credentialStore?.isEnabled == true {
+            return "Dario could not authenticate with the configured API key. Check the base URL and key in Settings."
+        }
+        return "Dario is not authenticated. In Settings, log in with your Claude subscription or save and enable an API key, then start the server."
+    }
+
+    private func publishStatus(state: DarioConnectionState) {
         status = DarioStatusSnapshot(
             state: state,
             endpoint: endpoint,
-            isLoggedIn: status.isLoggedIn,
-            backends: status.backends
+            isSubscriptionLoggedIn: subscriptionLoggedIn,
+            apiKeyConfigured: credentialStore?.hasAPIKey ?? false,
+            apiKeyEnabled: credentialStore?.isEnabled ?? false,
+            backends: (credentialStore?.isEnabled ?? false) ? [Self.apiBackendName] : []
         )
         onStatusChange?()
     }
 }
-
