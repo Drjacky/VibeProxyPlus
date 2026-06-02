@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_DIR="$PROJECT_DIR/src/Sources/CLIProxyMenuBar/Resources"
+TARGET_DIR="$PROJECT_DIR/src/Sources/AppBridge/Resources"
 TARGET_FILE="$TARGET_DIR/cli-proxy-api-plus"
 VERSION_FILE="$TARGET_DIR/cli-proxy-api-plus.version"
 ARCH="${TARGET_ARCH:-arm64}"

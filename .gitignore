@@ -26,20 +26,20 @@ VibeProxyPlus.app
 
 # Resources (copied during build)
 # cli-proxy-api binary and config are now committed to repo for releases
-# src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api
-# src/Sources/CLIProxyMenuBar/Resources/config.yaml
-src/Sources/CLIProxyMenuBar/Resources/static/
+# src/Sources/AppBridge/Resources/cli-proxy-api
+# src/Sources/AppBridge/Resources/config.yaml
+src/Sources/AppBridge/Resources/static/
 
 # Icon generation artifacts
-src/Sources/CLIProxyMenuBar/Resources/AppIcon.iconset/
+src/Sources/AppBridge/Resources/AppIcon.iconset/
 
 # Bundled backend (~50MB) — fetched by scripts/fetch-cliproxy-plus.sh
-src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus
-src/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus.sha256
+src/Sources/AppBridge/Resources/cli-proxy-api-plus
+src/Sources/AppBridge/Resources/cli-proxy-api-plus.sha256
 
 # Bundled Dario engine (~60MB) — built by scripts/fetch-dario.sh (Bun --compile)
-src/Sources/CLIProxyMenuBar/Resources/dario
-src/Sources/CLIProxyMenuBar/Resources/dario.sha256
+src/Sources/AppBridge/Resources/dario
+src/Sources/AppBridge/Resources/dario.sha256
 
 # Logs
 *.log

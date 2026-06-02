@@ -94,7 +94,7 @@ jobs:
           set -e
           FILENAME="${{ steps.get-latest-release.outputs.darwin_asset_name }}"
           URL="${{ steps.get-latest-release.outputs.darwin_asset_url }}"
-          TARGET_DIR="src/Sources/CLIProxyMenuBar/Resources"
+          TARGET_DIR="src/Sources/AppBridge/Resources"
           TARGET_FILE="$TARGET_DIR/cli-proxy-api-plus"
           VERSION_FILE="$TARGET_DIR/cli-proxy-api-plus.version"
           VERSION="${{ steps.get-latest-release.outputs.version }}"

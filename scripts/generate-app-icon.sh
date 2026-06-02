@@ -38,8 +38,8 @@ if [[ ! -f "$INPUT" ]]; then
     exit 1
 fi
 
-ICONSET="$PROJECT_DIR/src/Sources/CLIProxyMenuBar/Resources/AppIcon.iconset"
-ICNS="$PROJECT_DIR/src/Sources/CLIProxyMenuBar/Resources/AppIcon.icns"
+ICONSET="$PROJECT_DIR/src/Sources/AppBridge/Resources/AppIcon.iconset"
+ICNS="$PROJECT_DIR/src/Sources/AppBridge/Resources/AppIcon.icns"
 WORK="$INPUT"
 
 if [[ "$BADGE" -eq 1 ]]; then

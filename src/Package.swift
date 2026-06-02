@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "CLIProxyMenuBar",
+    name: "AppBridge",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "CLIProxyMenuBar",
-            targets: ["CLIProxyMenuBar"]
+            name: "AppBridge",
+            targets: ["AppBridge"]
         )
     ],
     dependencies: [
@@ -72,9 +72,9 @@ let package = Package(
         // The menu bar app shell. Registers both engines and hosts the active one; depends on
         // both engine modules (the only target allowed to).
         .executableTarget(
-            name: "CLIProxyMenuBar",
+            name: "AppBridge",
             dependencies: ["Sparkle", "EngineKit", "CLIProxyEngine", "DarioEngine"],
-            path: "Sources/CLIProxyMenuBar",
+            path: "Sources/AppBridge",
             resources: [
                 .copy("Resources")
             ]

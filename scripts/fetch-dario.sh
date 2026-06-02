@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the Dario engine into a single self-contained macOS binary and install it into
-# src/Sources/CLIProxyMenuBar/Resources/ (not in git; built at build time).
+# src/Sources/AppBridge/Resources/ (not in git; built at build time).
 #
 # Dario (askalf/dario, npm @askalf/dario) is a pure-ESM Node.js project with no prebuilt binary
 # release, so the binary is compiled with Bun's `--compile`. Dario relies on the Bun runtime for
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_DIR="$PROJECT_DIR/src/Sources/CLIProxyMenuBar/Resources"
+TARGET_DIR="$PROJECT_DIR/src/Sources/AppBridge/Resources"
 TARGET_FILE="$TARGET_DIR/dario"
 VERSION_FILE="$TARGET_DIR/dario.version"
 ARCH="${TARGET_ARCH:-arm64}"

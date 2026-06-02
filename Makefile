@@ -13,12 +13,12 @@ help: ## Show this help message
 build: ## Build the Swift executable (debug)
 	@echo "🔨 Building Swift executable..."
 	@cd src && swift build
-	@echo "✅ Build complete: src/.build/debug/CLIProxyMenuBar"
+	@echo "✅ Build complete: src/.build/debug/AppBridge"
 
 release: ## Build the Swift executable (release)
 	@echo "🔨 Building Swift executable (release)..."
 	@./build.sh
-	@echo "✅ Build complete: src/.build/release/CLIProxyMenuBar"
+	@echo "✅ Build complete: src/.build/release/AppBridge"
 
 fetch-cliproxy: ## Download cli-proxy-api-plus (required before first build)
 	@chmod +x scripts/fetch-cliproxy-plus.sh
@@ -62,7 +62,7 @@ clean: ## Clean build artifacts
 	@echo "🧹 Cleaning..."
 	@rm -rf src/.build
 	@rm -rf "VibeProxyPlus.app"
-	@rm -rf src/Sources/CLIProxyMenuBar/Resources/static
+	@rm -rf src/Sources/AppBridge/Resources/static
 	@echo "✅ Clean complete"
 
 test: ## Run a quick test build

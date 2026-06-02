@@ -20,7 +20,7 @@ BUILD_DIR="$SRC_DIR/.build/release"
 APP_DIR="$PROJECT_DIR/$APP_NAME.app"
 
 # Binary is not in git; download if missing or still an LFS pointer
-BINARY_RESOURCE="$SRC_DIR/Sources/CLIProxyMenuBar/Resources/cli-proxy-api-plus"
+BINARY_RESOURCE="$SRC_DIR/Sources/AppBridge/Resources/cli-proxy-api-plus"
 if [ ! -f "$BINARY_RESOURCE" ] || [ ! -s "$BINARY_RESOURCE" ] || head -1 "$BINARY_RESOURCE" 2>/dev/null | grep -q 'git-lfs'; then
     echo -e "${BLUE}Fetching cli-proxy-api-plus...${NC}"
     chmod +x "$PROJECT_DIR/scripts/fetch-cliproxy-plus.sh"
@@ -28,7 +28,7 @@ if [ ! -f "$BINARY_RESOURCE" ] || [ ! -s "$BINARY_RESOURCE" ] || head -1 "$BINAR
 fi
 
 # Dario engine binary is not in git; built at build time by scripts/fetch-dario.sh (Bun --compile).
-DARIO_RESOURCE="$SRC_DIR/Sources/CLIProxyMenuBar/Resources/dario"
+DARIO_RESOURCE="$SRC_DIR/Sources/AppBridge/Resources/dario"
 if [ ! -f "$DARIO_RESOURCE" ] || [ ! -s "$DARIO_RESOURCE" ]; then
     echo -e "${BLUE}Building dario engine binary...${NC}"
     chmod +x "$PROJECT_DIR/scripts/fetch-dario.sh"
@@ -56,23 +56,23 @@ mkdir -p "$APP_DIR/Contents/Frameworks"
 
 # Copy executable
 echo -e "${BLUE}Copying executable...${NC}"
-cp "$BUILD_DIR/CLIProxyMenuBar" "$APP_DIR/Contents/MacOS/"
-chmod +x "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
+cp "$BUILD_DIR/AppBridge" "$APP_DIR/Contents/MacOS/"
+chmod +x "$APP_DIR/Contents/MacOS/AppBridge"
 
 # Add rpath for Frameworks directory (needed for Sparkle)
-install_name_tool -add_rpath "@loader_path/../Frameworks" "$APP_DIR/Contents/MacOS/CLIProxyMenuBar" 2>/dev/null || true
+install_name_tool -add_rpath "@loader_path/../Frameworks" "$APP_DIR/Contents/MacOS/AppBridge" 2>/dev/null || true
 
 # Copy resources (copy contents, not the folder itself)
 echo -e "${BLUE}Copying resources...${NC}"
 # List what we're about to copy
 echo "Resources to copy:"
-ls -lh "$SRC_DIR/Sources/CLIProxyMenuBar/Resources/"
+ls -lh "$SRC_DIR/Sources/AppBridge/Resources/"
 
 # Copy each file/directory from Resources/* directly to Contents/Resources/
 # Exclude .swift files and other build artifacts
-if [ -d "$SRC_DIR/Sources/CLIProxyMenuBar/Resources" ]; then
+if [ -d "$SRC_DIR/Sources/AppBridge/Resources" ]; then
     # Use a loop to copy each item to avoid nested Resources folder
-    for item in "$SRC_DIR/Sources/CLIProxyMenuBar/Resources/"*; do
+    for item in "$SRC_DIR/Sources/AppBridge/Resources/"*; do
         if [ -e "$item" ]; then
             # Skip Swift sources, iconset dev folder (only AppIcon.icns belongs in the bundle)
             base="$(basename "$item")"
@@ -90,14 +90,14 @@ ls -lh "$APP_DIR/Contents/Resources/"
 if [ ! -f "$APP_DIR/Contents/Resources/cli-proxy-api-plus" ]; then
     echo -e "${YELLOW}⚠️ WARNING: cli-proxy-api-plus binary not found in bundle!${NC}"
     echo "Looking for cli-proxy-api-plus in source:"
-    find "$SRC_DIR/Sources/CLIProxyMenuBar/Resources" -name "cli-proxy-api-plus" -ls
+    find "$SRC_DIR/Sources/AppBridge/Resources" -name "cli-proxy-api-plus" -ls
     exit 1
 fi
 echo -e "${GREEN}✅ cli-proxy-api-plus bundled: $(ls -lh "$APP_DIR/Contents/Resources/cli-proxy-api-plus" | awk '{print $5}')${NC}"
 
 # Copy app icon
-if [ -f "$SRC_DIR/Sources/CLIProxyMenuBar/Resources/AppIcon.icns" ]; then
-    cp "$SRC_DIR/Sources/CLIProxyMenuBar/Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/"
+if [ -f "$SRC_DIR/Sources/AppBridge/Resources/AppIcon.icns" ]; then
+    cp "$SRC_DIR/Sources/AppBridge/Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/"
 fi
 
 # Copy Sparkle.framework
@@ -154,7 +154,7 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
     xattr -cr "$APP_DIR"
     
     # Remove any existing signatures first
-    codesign --remove-signature "$APP_DIR/Contents/MacOS/CLIProxyMenuBar" 2>/dev/null || true
+    codesign --remove-signature "$APP_DIR/Contents/MacOS/AppBridge" 2>/dev/null || true
     
     # Sign the cli-proxy-api-plus binary (required for notarization)
     if [ -f "$APP_DIR/Contents/Resources/cli-proxy-api-plus" ]; then
@@ -214,7 +214,7 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
     fi
     
     # Sign the main executable with hardened runtime
-    codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/MacOS/CLIProxyMenuBar"
+    codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/MacOS/AppBridge"
     
     # Then sign the entire app bundle
     codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR"
