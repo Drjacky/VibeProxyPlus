@@ -831,10 +831,20 @@ public struct SettingsView: View {
                         .onHover { inside in
                             if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                         }
-                    Text("and")
+                    Text(",")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Link("CLIProxyAPIPlus", destination: URL(string: "https://github.com/kaitranntt/CLIProxyAPIPlus")!)
+                        .font(.caption)
+                        .underline()
+                        .foregroundColor(.secondary)
+                        .onHover { inside in
+                            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                    Text("and")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Link("Dario", destination: URL(string: "https://github.com/askalf/dario")!)
                         .font(.caption)
                         .underline()
                         .foregroundColor(.secondary)
