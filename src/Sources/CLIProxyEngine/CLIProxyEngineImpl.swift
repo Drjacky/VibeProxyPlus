@@ -47,7 +47,7 @@ public final class CLIProxyEngineImpl: Engine {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated {
+            DispatchQueue.main.async {
                 self?.onStatusChange?()
             }
         }
