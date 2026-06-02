@@ -191,6 +191,7 @@ Use tag names like `v10.8.162` (must match `VERSION` and start with `v`).
 
 - [vibeproxy](https://github.com/automazeio/vibeproxy) - original macOS menu bar app
 - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus) - unified proxy server (Cursor and other providers)
+- [askalf/dario](https://github.com/askalf/dario) - alternative bundled proxy engine
 
 ---
 
