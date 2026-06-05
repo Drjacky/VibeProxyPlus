@@ -1,6 +1,6 @@
 name: Auto Release
 
-# After Update CLIProxyAPI opens a bump PR: merge it, bump 10.x.y, tag, push.
+# After Update CLIProxyAPI opens a bump PR: merge it, bump the patch version, tag, push.
 # Tag push triggers Build and Release (draft). Pushes to main alone do not run this workflow.
 
 on:
@@ -78,7 +78,7 @@ jobs:
           token: ${{ secrets.AUTO_UPDATE_TOKEN }}
           fetch-depth: 0
 
-      - name: Calculate new VibeProxyPlus version (10.x.y only)
+      - name: Calculate new VibeProxyPlus version (patch bump)
         if: steps.check-pr.outputs.has_pr == 'true'
         id: version
         run: |
@@ -90,13 +90,13 @@ jobs:
           echo "Current VibeProxyPlus version: $CURRENT_VERSION"
           
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-          if [ "$MAJOR" != "10" ]; then
-            echo "Error: VibeProxyPlus uses 10.x.y versioning; got major=$MAJOR from $CURRENT_VERSION" >&2
+          if ! [[ "$MAJOR" =~ ^[0-9]+$ && "$MINOR" =~ ^[0-9]+$ && "$PATCH" =~ ^[0-9]+$ ]]; then
+            echo "Error: VibeProxyPlus uses MAJOR.MINOR.PATCH versioning; got '$CURRENT_VERSION'" >&2
             exit 1
           fi
           
           NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="10.${MINOR}.${NEW_PATCH}"
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
           BUILD_NUMBER=$(git rev-list --count HEAD)
           
           echo "New version: $NEW_VERSION (build $BUILD_NUMBER)"
@@ -173,6 +173,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**PR #$PR_NUMBER merged** - CLIProxyAPIPlus \`${CLIPROXY_VERSION}\` from [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**VibeProxyPlus version** - \`v${NEW_VERSION}\` (10.x.y)" >> $GITHUB_STEP_SUMMARY
+          echo "**VibeProxyPlus version** - \`v${NEW_VERSION}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Next** - [Build and Release](../../actions/workflows/release.yml) uploads draft assets for \`v${NEW_VERSION}\`" >> $GITHUB_STEP_SUMMARY

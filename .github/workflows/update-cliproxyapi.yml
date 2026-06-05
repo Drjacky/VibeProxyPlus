@@ -210,6 +210,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AUTO_UPDATE_TOKEN }}
         run: |
-          echo "Triggering auto-release to merge bump PR and tag next 10.x.y release..."
+          echo "Triggering auto-release to merge bump PR and tag next release..."
           gh workflow run auto-release.yml
           echo "Auto-release workflow triggered"

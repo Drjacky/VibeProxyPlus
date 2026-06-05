@@ -22,7 +22,7 @@ usage() {
   sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
   echo ""
   echo "Options:"
-  echo "  --since TAG     Base tag (default: latest v10.* tag, else latest v* tag)"
+  echo "  --since TAG     Base tag (default: latest v* tag)"
   echo "  --to REF        End ref (default: HEAD)"
   echo "  --json          Output JSON instead of markdown"
   echo "  --no-prompt     Omit AI instruction block (markdown only)"
@@ -46,12 +46,6 @@ done
 resolve_since_tag() {
   if [ -n "$SINCE" ]; then
     echo "$SINCE"
-    return
-  fi
-  local tag
-  tag=$(git tag -l 'v10.*' --sort=-v:refname 2>/dev/null | head -n 1 || true)
-  if [ -n "$tag" ]; then
-    echo "$tag"
     return
   fi
   git tag -l 'v*' --sort=-v:refname 2>/dev/null | head -n 1 || true
