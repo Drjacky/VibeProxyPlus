@@ -21,16 +21,39 @@ TARGET_FILE="$TARGET_DIR/dario"
 VERSION_FILE="$TARGET_DIR/dario.version"
 ARCH="${TARGET_ARCH:-arm64}"
 REPO="askalf/dario"
-# Pin the Dario version. Resolution order:
-#   1. DARIO_TAG env override (deliberate one-off bump)
-#   2. the committed dario.version file (single source of truth, bumped by automation)
-#   3. a hardcoded fallback when neither is available
-DARIO_DEFAULT_TAG="v4.8.19"
-if [ -z "${DARIO_TAG:-}" ] && [ -f "$VERSION_FILE" ]; then
-  PINNED_VERSION="$(tr -d '[:space:]' < "$VERSION_FILE")"
-  [ -n "$PINNED_VERSION" ] && DARIO_TAG="v${PINNED_VERSION#v}"
-fi
-DARIO_TAG="${DARIO_TAG:-$DARIO_DEFAULT_TAG}"
+GITHUB_API="https://api.github.com/repos/${REPO}"
+
+github_api() {
+  local url="$1"
+  local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  if [ -n "$token" ]; then
+    curl -sf -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" "$url"
+  else
+    curl -sf "$url"
+  fi
+}
+
+normalize_tag() {
+  local t="$1"
+  if [[ "$t" == v* ]]; then echo "$t"; else echo "v$t"; fi
+}
+
+# Latest non-draft release tag (includes prereleases, ordered newest first).
+latest_release_tag() {
+  if command -v gh >/dev/null 2>&1 && [ -n "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]; then
+    gh release list --repo "$REPO" --limit 1 --exclude-drafts --json tagName \
+      --jq '.[0].tagName' 2>/dev/null && return 0
+  fi
+  github_api "${GITHUB_API}/releases" | jq -r '[.[] | select(.draft == false)][0].tag_name'
+}
+
+installed_version() {
+  [ -f "$VERSION_FILE" ] && tr -d '[:space:]' < "$VERSION_FILE" || echo ""
+}
+
+binary_present() {
+  [ -f "$TARGET_FILE" ] && [ -s "$TARGET_FILE" ]
+}
 
 case "$ARCH" in
   arm64)  BUN_TARGET="bun-darwin-arm64" ;;
@@ -41,17 +64,29 @@ case "$ARCH" in
     ;;
 esac
 
-binary_present() {
-  [ -f "$TARGET_FILE" ] && [ -s "$TARGET_FILE" ]
-}
+# Resolve the target tag: explicit pin via DARIO_TAG, otherwise latest upstream release.
+if [ -n "${DARIO_TAG:-}" ]; then
+  DARIO_TAG="$(normalize_tag "$DARIO_TAG")"
+else
+  DARIO_TAG="$(latest_release_tag || true)"
+fi
 
-installed_version() {
-  [ -f "$VERSION_FILE" ] && tr -d '[:space:]' < "$VERSION_FILE" || echo ""
-}
+if [ -z "$DARIO_TAG" ] || [ "$DARIO_TAG" = "null" ]; then
+  # Network/API lookup failed. Keep an existing binary; only error if we have nothing.
+  if binary_present; then
+    echo "Could not resolve latest Dario tag; keeping installed version $(installed_version)" >&2
+    exit 0
+  fi
+  echo "Could not resolve a Dario release tag from ${REPO}." >&2
+  if [ -z "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]; then
+    echo "Hint: set GH_TOKEN for GitHub API (required in CI)." >&2
+  fi
+  exit 1
+fi
 
 TARGET_VERSION="${DARIO_TAG#v}"
 
-# Skip rebuild when the installed binary already matches the pinned tag (unless forced).
+# Skip rebuild when the installed binary already matches the target tag (unless forced).
 if [ "${FORCE_FETCH_DARIO:-0}" != "1" ] \
    && binary_present \
    && [ "$(installed_version)" = "$TARGET_VERSION" ]; then
