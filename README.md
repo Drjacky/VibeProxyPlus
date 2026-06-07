@@ -10,6 +10,11 @@
   <a href="https://github.com/Drjacky/vibeproxyplus"><img alt="GitHub" src="https://img.shields.io/github/stars/Drjacky/vibeproxyplus.svg?style=social&label=Star"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/kaitranntt/CLIProxyAPIPlus"><img alt="CLIProxyAPIPlus engine version" src="https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FDrjacky%2Fvibeproxyplus%2Fmain%2Fsrc%2FSources%2FAppBridge%2FResources%2Fcli-proxy-api-plus.version&search=.%2B&label=CLIProxyAPIPlus%20engine&color=007ec6"></a>
+  <a href="https://github.com/askalf/dario"><img alt="Dario engine version" src="https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FDrjacky%2Fvibeproxyplus%2Fmain%2Fsrc%2FSources%2FAppBridge%2FResources%2Fdario.version&search=.%2B&label=Dario%20engine&color=007ec6"></a>
+</p>
+
 Native macOS menu bar app that routes your existing AI subscriptions through a local OpenAI-compatible proxy (`http://localhost:8317`).
 
 **VibeProxyPlus** is built on top of the open-source [VibeProxy](https://github.com/automazeio/vibeproxy) macOS UI and uses [CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus), an excellent unified proxy server for AI services with support for third-party providers.
