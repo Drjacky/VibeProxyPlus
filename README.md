@@ -129,12 +129,15 @@ Regenerate `AppIcon.icns` after editing `icon.png`: `make icon`
 vibeproxyplus/
 ├── src/
 │   ├── Sources/
-│   │   ├── CursorTokenImporter.swift
-│   │   ├── AppConfig.swift
-│   │   └── Resources/cli-proxy-api-plus.version
+│   │   ├── AppBridge/        # engine-agnostic app shell (menu bar, engine switch)
+│   │   │   └── Resources/    # bundled binaries + *.version files (binaries not in git)
+│   │   ├── CLIProxyEngine/   # cliproxyapiplus engine
+│   │   ├── DarioEngine/      # dario engine
+│   │   └── EngineKit/        # shared engine contracts
 │   └── Package.swift
 ├── appcast.xml              # Sparkle feed (arm64); empty until you ship releases
-├── scripts/fetch-cliproxy-plus.sh
+├── scripts/fetch-cliproxy-plus.sh   # fetch the cli-proxy-api-plus binary
+├── scripts/fetch-dario.sh           # compile the dario engine binary (Bun)
 ├── scripts/generate-app-icon.sh
 ├── create-app-bundle.sh
 └── Makefile
@@ -164,18 +167,24 @@ App version: edit **`VERSION`** at the repo root, then `make sync-version` (upda
 | [Build](.github/workflows/build.yml)               | Push/PR to `main` | Compile + tests only (no release)            |
 | [Build and Release](.github/workflows/release.yml) | See below         | Build ZIP/DMG and attach to a GitHub Release |
 
-**Pushing commits to `main` does not create a release.**
+Releases are author-driven. There is no scheduled automation - nothing auto-fetches
+engine binaries, bumps `VERSION`, tags, or opens release PRs. Engine binaries are
+fetched/compiled only at release-build time (or locally via `make app`).
+
+**Pushing commits to `main` does not create a release.** To cut a release, first bump
+`VERSION` (and any engine `.version` files you intend to update), update `CHANGELOG.md`,
+and commit. Then use one of the options below.
 
 ### Option A: Draft release on GitHub (recommended)
 
 1. **Releases** → **Draft a new release**
-2. Create tag `v<version>` matching `VERSION` (e.g. `v10.8.162`) on the commit you want
+2. Create tag `v<version>` matching `VERSION` (e.g. `v14.8.170`) on the commit you want
 3. Leave **Set as a pre-release** off, keep **This is a draft release** checked
 4. Click **Save draft** (do not publish yet)
-5. **Actions** runs **Build and Release** automatically and uploads ZIP/DMG to that draft
+5. **Actions** runs **Build and Release** automatically (fetches `cli-proxy-api-plus`, compiles `dario`, builds, generates notes from `CHANGELOG.md`) and uploads ZIP/DMG to that draft
 6. Review assets on the draft, then **Publish release** when ready
 
-Use tag names like `v10.8.162` (must match `VERSION` and start with `v`).
+Use tag names like `v14.8.170` (must match `VERSION` and start with `v`).
 
 ### Option B: Run workflow manually
 
@@ -183,6 +192,14 @@ Use tag names like `v10.8.162` (must match `VERSION` and start with `v`).
 2. **version:** leave empty to use `VERSION` file
 3. **draft:** `true` to keep a draft on GitHub (default)
 4. **publish:** `true` only if `draft` is `false` and you want it live immediately
+
+### Option C: Tag locally
+
+```bash
+# After bumping VERSION + CHANGELOG.md and committing:
+git tag v14.8.170
+git push origin v14.8.170   # triggers Build and Release as a draft
+```
 
 ---
 

@@ -21,8 +21,16 @@ TARGET_FILE="$TARGET_DIR/dario"
 VERSION_FILE="$TARGET_DIR/dario.version"
 ARCH="${TARGET_ARCH:-arm64}"
 REPO="askalf/dario"
-# Pin the Dario version. Override with DARIO_TAG to bump deliberately; never auto-advance.
-DARIO_TAG="${DARIO_TAG:-v4.8.19}"
+# Pin the Dario version. Resolution order:
+#   1. DARIO_TAG env override (deliberate one-off bump)
+#   2. the committed dario.version file (single source of truth, bumped by automation)
+#   3. a hardcoded fallback when neither is available
+DARIO_DEFAULT_TAG="v4.8.19"
+if [ -z "${DARIO_TAG:-}" ] && [ -f "$VERSION_FILE" ]; then
+  PINNED_VERSION="$(tr -d '[:space:]' < "$VERSION_FILE")"
+  [ -n "$PINNED_VERSION" ] && DARIO_TAG="v${PINNED_VERSION#v}"
+fi
+DARIO_TAG="${DARIO_TAG:-$DARIO_DEFAULT_TAG}"
 
 case "$ARCH" in
   arm64)  BUN_TARGET="bun-darwin-arm64" ;;

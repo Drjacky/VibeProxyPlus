@@ -2,15 +2,16 @@ name: Build and Release
 
 # Build ZIP/DMG and attach to a GitHub Release (draft by default).
 #
-# Triggers:
+# This is the only release workflow. Releases are author-driven; there is no automatic
+# version bumping or scheduled engine fetching. Triggers:
 #   1. workflow_dispatch — Actions → "Build and Release" → set version, optional draft/publish
 #   2. release created (draft) — Releases → Draft new release with tag v* → CI builds and uploads assets
-#   3. push tag v* — must match repo-root VERSION (e.g. v10.8.162)
+#   3. push tag v* — must match repo-root VERSION (e.g. v14.8.170)
 #
-# Pushing to main does NOT release. Auto-release pushes v10.* tags after CLIProxy bumps.
+# Pushing to main does NOT release.
 #
 # Tag pushes use the workflow file AT THE TAGGED COMMIT. Re-tag main after workflow changes:
-#   git tag -fa v10.8.162 && git push origin :refs/tags/v10.8.162 && git push origin v10.8.162
+#   git tag -fa v14.8.170 && git push origin :refs/tags/v14.8.170 && git push origin v14.8.170
 
 on:
   push:
