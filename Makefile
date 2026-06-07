@@ -1,8 +1,4 @@
-.PHONY: build app install clean run help fetch-cliproxy icon changelog-commits sync-version version check-isolation
-
-icon: ## Regenerate AppIcon.icns from icon.png (use: make icon BADGE=1 to add + badge first)
-	@chmod +x scripts/generate-app-icon.sh scripts/badge-app-icon.swift
-	@if [ "$(BADGE)" = "1" ]; then ./scripts/generate-app-icon.sh --badge icon.png; else ./scripts/generate-app-icon.sh icon.png; fi
+.PHONY: build app install clean run help fetch-cliproxy changelog-commits sync-version version check-isolation
 
 help: ## Show this help message
 	@echo "VibeProxyPlus - macOS Menu Bar App"

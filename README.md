@@ -106,8 +106,6 @@ open VibeProxyPlus.app
 
 Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first). Building the bundled **Dario** engine binary additionally requires [Bun](https://bun.sh) and Node >=18 on the build machine only (never on the end user's machine); `scripts/fetch-dario.sh` clones the pinned Dario tag and compiles a single self-contained binary with `bun build --compile`.
 
-Regenerate `AppIcon.icns` after editing `icon.png`: `make icon`
-
 ---
 
 ## Quick start
@@ -138,7 +136,6 @@ vibeproxyplus/
 ├── appcast.xml              # Sparkle feed (arm64); empty until you ship releases
 ├── scripts/fetch-cliproxy-plus.sh   # fetch the cli-proxy-api-plus binary
 ├── scripts/fetch-dario.sh           # compile the dario engine binary (Bun)
-├── scripts/generate-app-icon.sh
 ├── create-app-bundle.sh
 └── Makefile
 ```
@@ -146,7 +143,6 @@ vibeproxyplus/
 ### Commands
 
 ```bash
-make icon     # Build AppIcon.icns from icon.png
 make app      # Build VibeProxyPlus.app
 make run      # Build and open
 make install  # Copy to /Applications
