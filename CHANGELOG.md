@@ -4,6 +4,18 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+## [14.9.0] - 2026-06-14
+
+### Updated
+
+- **CLIProxyAPIPlus 7.1.68-2** - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus/releases/tag/v7.1.68-2). Adds newly verified models, post-auth request interceptors and a JavaScript plugin host, deduplicated concurrent token refresh, and streaming/translator fixes for Codex, Claude, Gemini, and Antigravity.
+- **Dario 4.8.74** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v4.8.74). The public `/health` endpoint no longer exposes OAuth internals to external callers; loopback callers (the app's readiness probe) still receive full detail.
+
+### Fixed
+
+- Dario login no longer hangs. `dario login` now starts the proxy as a side effect when valid credentials already exist; the app now passes `--no-proxy` so login only authenticates and exits cleanly, leaving proxy lifecycle to the app.
+- `scripts/fetch-cliproxy-plus.sh` and the release workflow now match the upstream `_no-plugin` darwin asset naming (the suffix is matched optionally, so older un-suffixed assets still resolve).
+
 ## [14.8.170] - 2026-06-02
 
 ### Added
@@ -40,7 +52,8 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 - Initial Drjacky release with **CLIProxyAPIPlus** backend and Cursor provider.
 
-[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.8.170...HEAD
+[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.9.0...HEAD
+[14.9.0]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.0
 [14.8.170]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.8.170
 [10.8.170]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v10.8.170
 [10.8.169]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v10.8.169
