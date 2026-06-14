@@ -924,13 +924,27 @@ public class ServerManager: ObservableObject {
         // all user-authored content and only overlay the keys the app owns (provider toggles and
         // stored API keys). This keeps custom settings/secrets stable across restarts. The fully
         // composed config is only written verbatim on first run or after an explicit reset.
-        if FileManager.default.fileExists(atPath: mergedConfigPath.path),
-           case .success(let existingRuntimeRoot) = loadYAMLDictionary(atPath: mergedConfigPath.path),
-           !existingRuntimeRoot.isEmpty {
-            mergedRoot = ConfigComposer.overlayManagedKeys(
-                onto: existingRuntimeRoot,
-                from: mergedRoot
-            )
+        if FileManager.default.fileExists(atPath: mergedConfigPath.path) {
+            switch loadYAMLDictionary(atPath: mergedConfigPath.path) {
+            case .success(let existingRuntimeRoot):
+                if !existingRuntimeRoot.isEmpty {
+                    mergedRoot = ConfigComposer.overlayManagedKeys(
+                        onto: existingRuntimeRoot,
+                        from: mergedRoot
+                    )
+                }
+            case .failure:
+                // The existing merged-config.yaml is present but cannot be read or parsed as a
+                // YAML mapping (for example a malformed edit, or a partial write in progress).
+                // Refuse to overwrite it: writing the freshly composed config here would discard
+                // all user-authored content (custom settings, secrets, dashboard edits). Surface
+                // an actionable error so the user can fix the file or rebuild it via Reset Config.
+                return .failure(
+                    ConfigResolutionFailure(
+                        message: "merged-config.yaml could not be parsed and was left unchanged to avoid losing your settings. Fix the YAML at \(mergedConfigPath.path), or use Reset Config to rebuild it from defaults."
+                    )
+                )
+            }
         }
 
         do {
