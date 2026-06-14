@@ -4,6 +4,12 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+## [14.9.1] - 2026-06-14
+
+### Fixed
+
+- Prevented a rare loss of `~/.cli-proxy-api/merged-config.yaml`. If the existing file was present but could not be parsed (for example a malformed manual edit, or a partial write while the management dashboard was saving), the app would silently overwrite it with a freshly composed config, discarding custom settings, secrets, and dashboard edits. The app now refuses to overwrite an unparseable merged-config.yaml and surfaces an error directing you to fix the file or use Reset Config.
+
 ## [14.9.0] - 2026-06-14
 
 ### Updated
@@ -52,7 +58,8 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 - Initial Drjacky release with **CLIProxyAPIPlus** backend and Cursor provider.
 
-[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.9.0...HEAD
+[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.9.1...HEAD
+[14.9.1]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.1
 [14.9.0]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.0
 [14.8.170]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.8.170
 [10.8.170]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v10.8.170
