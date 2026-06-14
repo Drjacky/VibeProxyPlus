@@ -9,7 +9,10 @@ import Diagnostics
 /// - `dario proxy --port <p> --host 127.0.0.1` starts the local proxy.
 /// - `GET /health` (unauthenticated) is the readiness probe.
 /// - `dario` reads/writes `~/.dario`; HOME is preserved so it finds its config and credentials.
-/// - `dario login` authenticates a Claude subscription via OAuth.
+/// - `dario login --no-proxy` authenticates a Claude subscription via OAuth and exits without
+///   starting the proxy. `--no-proxy` is required because plain `dario login` starts the proxy as
+///   a side effect (and never returns) when valid credentials already exist; the host manages the
+///   proxy lifecycle separately via `start`/`stop`.
 /// - `dario proxy` refuses to serve and exits with "Not authenticated" until `dario login` has
 ///   run. The host classifies that as a distinct, user-actionable failure (not a crash) so the UI
 ///   can prompt the user to log in.
@@ -152,7 +155,7 @@ public final class ProcessDarioHost: DarioHost {
         let logStore = self.logStore
         let loginConfig = ManagedProcessConfiguration(
             executablePath: binaryPath,
-            arguments: ["login"],
+            arguments: ["login", "--no-proxy"],
             environment: environment
         )
         let loginProcess = ManagedProcess(configuration: loginConfig) { @Sendable line in

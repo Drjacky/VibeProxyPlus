@@ -44,9 +44,11 @@ binary_present() {
     && ! head -1 "$TARGET_FILE" 2>/dev/null | grep -q 'git-lfs'
 }
 
+# Upstream darwin assets are published with a `_no-plugin` suffix (the plugin-enabled build
+# is not distributed); the suffix is matched optionally so older un-suffixed assets also resolve.
 case "$ARCH" in
-  arm64) ASSET_REGEX='^CLIProxyAPIPlus_.+_darwin_(aarch64|arm64)\.tar\.gz$' ;;
-  x86_64) ASSET_REGEX='^CLIProxyAPIPlus_.+_darwin_amd64\.tar\.gz$' ;;
+  arm64) ASSET_REGEX='^CLIProxyAPIPlus_.+_darwin_(aarch64|arm64)(_no-plugin)?\.tar\.gz$' ;;
+  x86_64) ASSET_REGEX='^CLIProxyAPIPlus_.+_darwin_amd64(_no-plugin)?\.tar\.gz$' ;;
   *)
     echo "Unsupported TARGET_ARCH: $ARCH (use arm64 or x86_64)" >&2
     exit 1
