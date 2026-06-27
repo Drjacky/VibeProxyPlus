@@ -4,6 +4,13 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+## [14.9.2] - 2026-06-27
+
+### Updated
+
+- **CLIProxyAPIPlus 7.1.68-6** - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus/releases/tag/v7.1.68-6). Provider-side fixes for Qoder usage accounting and Kiro (cache usage fields, fallback models, IDE import normalization, raw IDE token imports).
+- **Dario 4.8.101** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v4.8.101). Tracks Claude Code v2.1.195 with refreshed wire-fidelity templates, and adds correctness fixes: advertise only client-declared tools, broaden the overage guard to all non-subscription billing claims, deterministic billing-tag (`cch`) anchoring, and preserve interactive-only tools across template rebakes.
+
 ## [14.9.1] - 2026-06-14
 
 ### Fixed
@@ -58,7 +65,8 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 - Initial Drjacky release with **CLIProxyAPIPlus** backend and Cursor provider.
 
-[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.9.1...HEAD
+[Unreleased]: https://github.com/Drjacky/vibeproxyplus/compare/v14.9.2...HEAD
+[14.9.2]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.2
 [14.9.1]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.1
 [14.9.0]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.9.0
 [14.8.170]: https://github.com/Drjacky/vibeproxyplus/releases/tag/v14.8.170
