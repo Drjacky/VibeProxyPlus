@@ -4,6 +4,21 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+## [14.10.0] - 2026-10-03
+
+### Added
+
+- **Global Claude cloak mode.** A new control in the Claude section of settings sets the cloak mode (Auto, Always, Never) for all Claude accounts, along with strict mode, sensitive words, and cached user id. The choice is remembered and defaults to Auto. Settings are written into each Claude OAuth auth file so they apply without a `claude-api-key` config entry.
+
+### Fixed
+
+- The Dario proxy is now launched with `--port=PORT --host=ADDRESS` flags. Dario 6 rejects the space-separated form and refused to start.
+
+### Updated
+
+- **CLIProxyAPIPlus 7.3.12-1** - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus/releases/tag/v7.3.12-1). Claude OAuth credentials honor cloak settings from the auth-file metadata (nonblank attributes first, string metadata as fallback), enabling per-credential cloak configuration for OAuth/token accounts ([#123](https://github.com/kaitranntt/CLIProxyAPIPlus/issues/123)).
+- **Dario 6.12.23** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v6.12.23). New major version; `dario proxy` now accepts flags only in `--key=value` form.
+
 ## [14.9.2] - 2026-06-27
 
 ### Updated
