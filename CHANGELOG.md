@@ -12,6 +12,7 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ### Fixed
 
+- **Check for Updates now finds new releases.** The update feed was never populated, so the app always reported it was up to date. Published releases are now signed and added to the feed automatically. Installs older than 14.10.0 lack the update signing key and must download 14.10.0 manually once; later updates install from the app.
 - The Dario proxy is now launched with `--port=PORT --host=ADDRESS` flags. Dario 6 rejects the space-separated form and refused to start.
 
 ### Updated
