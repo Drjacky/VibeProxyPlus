@@ -62,7 +62,7 @@ public final class ProcessDarioHost: DarioHost {
 
         let config = ManagedProcessConfiguration(
             executablePath: binaryPath,
-            arguments: ["proxy", "--port", String(port), "--host", "127.0.0.1"],
+            arguments: ["proxy", "--port=\(port)", "--host=127.0.0.1"],
             environment: environment
         )
 
