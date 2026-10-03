@@ -81,6 +81,34 @@ public class ServerManager: ObservableObject {
     }
     public var onVercelConfigChanged: (() -> Void)?
 
+    /// Global Claude cloak mode ("auto" / "always" / "never"), applied to all Claude OAuth
+    /// accounts by writing `cloak_*` fields into their auth JSON files.
+    @Published public var cloakMode: String = CloakMode.auto.rawValue {
+        didSet {
+            UserDefaults.standard.set(cloakMode, forKey: "cloakMode")
+            onCloakSettingsChanged?()
+        }
+    }
+    @Published public var cloakStrictMode: Bool = false {
+        didSet {
+            UserDefaults.standard.set(cloakStrictMode, forKey: "cloakStrictMode")
+            onCloakSettingsChanged?()
+        }
+    }
+    @Published public var cloakSensitiveWords: String = "" {
+        didSet {
+            UserDefaults.standard.set(cloakSensitiveWords, forKey: "cloakSensitiveWords")
+            onCloakSettingsChanged?()
+        }
+    }
+    @Published public var cloakCacheUserID: Bool = false {
+        didSet {
+            UserDefaults.standard.set(cloakCacheUserID, forKey: "cloakCacheUserId")
+            onCloakSettingsChanged?()
+        }
+    }
+    public var onCloakSettingsChanged: (() -> Void)?
+
     /// Helper class to capture output text across closures
     private class OutputCapture {
         var text = ""
@@ -139,6 +167,10 @@ public class ServerManager: ObservableObject {
         }
         vercelGatewayEnabled = UserDefaults.standard.bool(forKey: "vercelGatewayEnabled")
         vercelApiKey = UserDefaults.standard.string(forKey: "vercelApiKey") ?? ""
+        cloakMode = UserDefaults.standard.string(forKey: "cloakMode") ?? CloakMode.auto.rawValue
+        cloakStrictMode = UserDefaults.standard.bool(forKey: "cloakStrictMode")
+        cloakSensitiveWords = UserDefaults.standard.string(forKey: "cloakSensitiveWords") ?? ""
+        cloakCacheUserID = UserDefaults.standard.bool(forKey: "cloakCacheUserId")
         reloadCustomProviders()
         markObservedConfigInputsCurrent()
     }

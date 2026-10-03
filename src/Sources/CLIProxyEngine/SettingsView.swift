@@ -109,6 +109,58 @@ struct VercelGatewayControls: View {
     }
 }
 
+/// Global Claude cloak controls shown in the Claude expanded section. Applies to all Claude
+/// accounts by writing `cloak_*` fields into each account's auth JSON file.
+struct ClaudeCloakControls: View {
+    @ObservedObject var serverManager: ServerManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("Cloak mode")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("", selection: $serverManager.cloakMode) {
+                    ForEach(CloakMode.allCases, id: \.rawValue) { mode in
+                        Text(mode.displayName).tag(mode.rawValue)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 140)
+                .font(.caption)
+            }
+            .help("Applies to all Claude accounts. Auto: cloak only non-Claude-Code clients. Always: always cloak. Never: never cloak.")
+
+            Toggle(isOn: $serverManager.cloakStrictMode) {
+                Text("Strict mode (strip user system messages)")
+                    .font(.caption)
+            }
+            .toggleStyle(.checkbox)
+            .help("When on, strip all user system messages and keep only the Claude Code prompt.")
+
+            HStack(spacing: 8) {
+                Text("Sensitive words")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                TextField("comma,separated", text: $serverManager.cloakSensitiveWords)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 200)
+                    .font(.caption)
+            }
+            .help("Optional comma-separated words to obfuscate with zero-width characters.")
+
+            Toggle(isOn: $serverManager.cloakCacheUserID) {
+                Text("Reuse cached user id")
+                    .font(.caption)
+            }
+            .toggleStyle(.checkbox)
+            .help("When on, reuse a cached user_id per credential instead of generating a random one each request.")
+        }
+        .padding(.leading, 28)
+        .padding(.top, 4)
+    }
+}
+
 /// A row displaying a service with its connected accounts and add button
 struct ServiceRow<ExtraContent: View>: View {
     let serviceType: ServiceType
@@ -656,6 +708,10 @@ public struct SettingsView: View {
                         VercelGatewayControls(serverManager: serverManager)
                     }
 
+                    if serverManager.isProviderEnabled("claude") {
+                        ClaudeCloakControls(serverManager: serverManager)
+                    }
+
                     ServiceRow(
                         serviceType: .codex,
                         iconName: "icon-codex.png",
@@ -962,9 +1018,18 @@ public struct SettingsView: View {
             authManager.checkAuthStatus()
             serverManager.reloadCustomProviders()
             checkLaunchAtLogin()
+            serverManager.onCloakSettingsChanged = { applyCloakSettingsToClaudeAccounts(refreshStatus: false) }
+            DispatchQueue.main.async {
+                applyCloakSettingsToClaudeAccounts(refreshStatus: false)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .authDirectoryChanged)) { _ in
             authManager.checkAuthStatus()
+            // checkAuthStatus publishes accounts asynchronously on the main queue; re-apply cloak
+            // settings on the next tick so newly-added Claude accounts inherit the global mode.
+            DispatchQueue.main.async {
+                applyCloakSettingsToClaudeAccounts(refreshStatus: false)
+            }
         }
         .alert("Authentication Result", isPresented: $showingAuthResult) {
             Button("OK", role: .cancel) { }
@@ -982,7 +1047,27 @@ public struct SettingsView: View {
     }
 
     // MARK: - Actions
-    
+
+    /// Write the current global cloak settings into every Claude OAuth auth file so all Claude
+    /// accounts share one mode. Also invoked after login so freshly-added accounts inherit it.
+    private func applyCloakSettingsToClaudeAccounts(refreshStatus: Bool) {
+        let claudeAccounts = authManager.accounts(for: .claude)
+        guard !claudeAccounts.isEmpty else { return }
+        for account in claudeAccounts {
+            authManager.applyCloakSettings(
+                to: account,
+                mode: serverManager.cloakMode,
+                strictMode: serverManager.cloakStrictMode,
+                sensitiveWords: serverManager.cloakSensitiveWords,
+                cacheUserID: serverManager.cloakCacheUserID
+            )
+        }
+        serverManager.refreshAuthBackedConfiguration()
+        if refreshStatus {
+            authManager.checkAuthStatus()
+        }
+    }
+
     private func toggleAccountDisabled(_ account: AuthAccount) {
         if authManager.toggleAccountDisabled(account) {
             serverManager.refreshAuthBackedConfiguration()

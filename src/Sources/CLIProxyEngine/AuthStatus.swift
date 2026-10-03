@@ -26,6 +26,27 @@ enum ServiceType: String, CaseIterable {
     }
 }
 
+/// Global cloak mode applied to all Claude OAuth accounts.
+///
+/// Written into each Claude auth JSON file as the string field `cloak_mode`, which the
+/// CLIProxyAPIPlus binary (>= 7.2.62-0) reads from the auth-file metadata:
+/// - `auto`: cloak only when the client is not Claude Code (based on User-Agent)
+/// - `always`: always apply cloaking regardless of client
+/// - `never`: never apply cloaking
+enum CloakMode: String, CaseIterable {
+    case auto
+    case always
+    case never
+
+    var displayName: String {
+        switch self {
+        case .auto: return "Auto"
+        case .always: return "Always"
+        case .never: return "Never"
+        }
+    }
+}
+
 /// Represents a single authenticated account
 struct AuthAccount: Identifiable, Equatable {
     let id: String  // filename
@@ -198,6 +219,40 @@ class AuthManager: ObservableObject {
         }
     }
     
+    /// Write global cloak settings into a single Claude account's auth JSON file.
+    ///
+    /// All four keys are stored as JSON strings because the CLIProxyAPIPlus binary only reads
+    /// them from the auth-file metadata as strings (`cloak_mode`, `cloak_strict_mode`,
+    /// `cloak_sensitive_words`, `cloak_cache_user_id`). Boolean/array values would be ignored.
+    /// The caller is responsible for refreshing auth status once after applying to all accounts.
+    @discardableResult
+    func applyCloakSettings(
+        to account: AuthAccount,
+        mode: String,
+        strictMode: Bool,
+        sensitiveWords: String,
+        cacheUserID: Bool
+    ) -> Bool {
+        do {
+            let data = try Data(contentsOf: account.filePath)
+            guard var json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                NSLog("[AuthStatus] Failed to parse auth file as JSON: %@", account.filePath.path)
+                return false
+            }
+            json["cloak_mode"] = mode
+            json["cloak_strict_mode"] = strictMode ? "true" : "false"
+            json["cloak_sensitive_words"] = sensitiveWords
+            json["cloak_cache_user_id"] = cacheUserID ? "true" : "false"
+            let updatedData = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
+            try updatedData.write(to: account.filePath, options: .atomic)
+            NSLog("[AuthStatus] Applied cloak_mode=%@ to: %@", mode, account.filePath.path)
+            return true
+        } catch {
+            NSLog("[AuthStatus] Failed to apply cloak settings: %@", error.localizedDescription)
+            return false
+        }
+    }
+
     /// Delete a specific account's auth file
     func deleteAccount(_ account: AuthAccount) -> Bool {
         do {
