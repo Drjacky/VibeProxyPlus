@@ -1,0 +1,131 @@
+name: Update Appcast
+
+# Adds a published GitHub Release to the Sparkle feed (appcast.xml) on main so
+# "Check for Updates..." in the app can find it.
+#
+# Triggers:
+#   1. release published - runs when a draft release is published (by hand, or by
+#      release.yml with publish=true, which uses AUTO_UPDATE_TOKEN so the event fires).
+#   2. workflow_dispatch - add or refresh an already-published tag, e.g. v14.10.0.
+#
+# Requires secrets:
+#   SPARKLE_ED_PRIVATE_KEY - EdDSA private key (Sparkle generate_keys -x); its public
+#                            half is SUPublicEDKey in src/Info.plist.
+#   AUTO_UPDATE_TOKEN      - token allowed to push to main.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published release tag to add to the appcast (e.g. v14.10.0)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: appcast
+  cancel-in-progress: false
+
+jobs:
+  appcast:
+    name: Sign and publish appcast item
+    runs-on: macos-14
+    env:
+      TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+      SPARKLE_VERSION: "2.8.1"
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.AUTO_UPDATE_TOKEN }}
+
+      - name: Resolve version, build number and asset
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          IS_DRAFT=$(gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft -q .isDraft)
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "Release $TAG is still a draft; publish it first." >&2
+            exit 1
+          fi
+          ASSET=$(gh release view "$TAG" --repo "${{ github.repository }}" --json assets \
+            -q '[.assets[].name | select(test("^VibeProxyPlus-arm64-(signed|unsigned)\\.zip$"))] | sort | .[0] // empty')
+          if [ -z "$ASSET" ]; then
+            echo "No VibeProxyPlus-arm64-*.zip asset on $TAG." >&2
+            exit 1
+          fi
+          gh release download "$TAG" --repo "${{ github.repository }}" --pattern "$ASSET" --dir dl
+          ditto -x -k "dl/$ASSET" extracted
+          PLIST="extracted/VibeProxyPlus.app/Contents/Info.plist"
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")
+          SHORT=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
+          MIN_SYS=$(/usr/libexec/PlistBuddy -c "Print :LSMinimumSystemVersion" "$PLIST")
+          if [ "$SHORT" != "$VERSION" ]; then
+            echo "Bundle version $SHORT does not match tag $TAG." >&2
+            exit 1
+          fi
+          if ! /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$PLIST" >/dev/null 2>&1; then
+            echo "Bundle in $TAG has no SUPublicEDKey; Sparkle would reject signed updates from it." >&2
+            exit 1
+          fi
+          {
+            echo "version=$VERSION"
+            echo "build=$BUILD"
+            echo "min_system=$MIN_SYS"
+            echo "asset=$ASSET"
+            echo "url=https://github.com/${{ github.repository }}/releases/download/${TAG}/${ASSET}"
+            echo "length=$(stat -f%z "dl/$ASSET")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Sign update archive
+        id: sign
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SPARKLE_ED_PRIVATE_KEY}" ]; then
+            echo "SPARKLE_ED_PRIVATE_KEY repository secret is missing." >&2
+            exit 1
+          fi
+          curl -L -f --retry 3 -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          mkdir sparkle && tar -xf sparkle.tar.xz -C sparkle
+          SIG=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | ./sparkle/bin/sign_update --ed-key-file - -p "dl/${{ steps.meta.outputs.asset }}")
+          test -n "$SIG"
+          echo "signature=$SIG" >> "$GITHUB_OUTPUT"
+
+      - name: Update appcast.xml
+        run: |
+          set -euo pipefail
+          ./scripts/release-notes-from-changelog.sh "${{ steps.meta.outputs.version }}" > release-notes.md || : > release-notes.md
+          python3 scripts/update-appcast.py \
+            --appcast appcast.xml \
+            --version "${{ steps.meta.outputs.version }}" \
+            --build "${{ steps.meta.outputs.build }}" \
+            --url "${{ steps.meta.outputs.url }}" \
+            --length "${{ steps.meta.outputs.length }}" \
+            --signature "${{ steps.sign.outputs.signature }}" \
+            --min-system "${{ steps.meta.outputs.min_system }}" \
+            --notes-file release-notes.md
+          xmllint --noout appcast.xml
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- appcast.xml; then
+            echo "appcast.xml unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml
+          git commit -m "Update appcast for ${TAG}"
+          git push origin HEAD:main

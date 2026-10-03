@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>14.10.0</string>
 	<key>CFBundleVersion</key>
-	<string>837</string>
+	<string>841</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>LSUIElement</key>
@@ -34,6 +34,8 @@
 	<false/>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/Drjacky/vibeproxyplus/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>Y1JObksu9jkrG7d0A51TWZkEBBi0Ax+J9kQHp/hLQ3s=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>
