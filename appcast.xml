@@ -5,5 +5,32 @@
     <link>https://github.com/Drjacky/vibeproxyplus</link>
     <description>Sparkle feed for VibeProxyPlus arm64 builds. Items are added when you publish a GitHub Release.</description>
     <language>en</language>
+    <item>
+      <title>Version 14.10.0</title>
+      <sparkle:version>843</sparkle:version>
+      <sparkle:shortVersionString>14.10.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <pubDate>Sun, 04 Oct 2026 09:17:07 GMT</pubDate>
+      <description sparkle:format="markdown"><![CDATA[
+
+### Added
+
+- **Global Claude cloak mode.** A new control in the Claude section of settings sets the cloak mode (Auto, Always, Never) for all Claude accounts, along with strict mode, sensitive words, and cached user id. The choice is remembered and defaults to Auto. Settings are written into each Claude OAuth auth file so they apply without a `claude-api-key` config entry.
+
+### Fixed
+
+- **Check for Updates now finds new releases.** The update feed was never populated, so the app always reported it was up to date. Published releases are now signed and added to the feed automatically. Installs older than 14.10.0 lack the update signing key and must download 14.10.0 manually once; later updates install from the app.
+- The Dario proxy is now launched with `--port=PORT --host=ADDRESS` flags. Dario 6 rejects the space-separated form and refused to start.
+
+### Updated
+
+- **CLIProxyAPIPlus 7.3.12-1** - [kaitranntt/CLIProxyAPIPlus](https://github.com/kaitranntt/CLIProxyAPIPlus/releases/tag/v7.3.12-1). Claude OAuth credentials honor cloak settings from the auth-file metadata (nonblank attributes first, string metadata as fallback), enabling per-credential cloak configuration for OAuth/token accounts ([#123](https://github.com/kaitranntt/CLIProxyAPIPlus/issues/123)).
+- **Dario 6.12.23** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v6.12.23). New major version; `dario proxy` now accepts flags only in `--key=value` form.
+]]></description>
+      <enclosure url="https://github.com/Drjacky/VibeProxyPlus/releases/download/v14.10.0/VibeProxyPlus-arm64-unsigned.zip"
+                 type="application/octet-stream"
+                 sparkle:edSignature="kXy1bSPzIpypDLlsriNKF9d7KpBSKfBrg3o3BpRZxqmpGwRa1rQpV1qYnEca/Yxkbq2HWNm1oEG+ySStUr/aAQ=="
+                 length="50745769"/>
+    </item>
   </channel>
 </rss>
