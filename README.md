@@ -122,6 +122,31 @@ Requires `curl` and `jq` (or run `./scripts/fetch-cliproxy-plus.sh` first). Buil
    - **Fetch Auth Locally** or **Add Account** for Cursor
 4. Point your tool at `http://localhost:8317/v1` with any placeholder API key.
 
+Port 8317 accepts connections from this Mac only by default. To use the proxy from other devices on your network, turn on **Allow LAN connections** in Settings and use this machine's LAN IP instead of `localhost`.
+
+### Codex configuration
+
+Codex reads its configuration from `~/.codex/config.toml`. There are two ways to point it at VibeProxyPlus.
+
+**Simple override** - replace the default endpoint:
+
+```toml
+base_url = "http://127.0.0.1:8317/v1"
+```
+
+**Explicit provider** - add a named provider and select it:
+
+```toml
+model_provider = "cliproxyapi"
+
+[model_providers.cliproxyapi]
+name = "cliproxyapi"
+base_url = "http://127.0.0.1:8317/v1"
+wire_api = "responses"
+```
+
+Both route Codex agent traffic through the proxy. Codex's native ChatGPT surfaces (Quick Chat, "More details", and Computer history) use the ChatGPT account path; with the explicit provider block they have been reported to fail, while the simple override leaves them working ([automazeio/vibeproxy#544](https://github.com/automazeio/vibeproxy/issues/544)). If you rely on those features, prefer the simple override.
+
 ---
 
 ## Development
