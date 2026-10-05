@@ -1144,7 +1144,7 @@ public struct SettingsView: View {
         }
         
         serverManager.runAuthCommand(command) { success, output in
-            NSLog("[SettingsView] Auth completed - success: %d, output: %@", success, output)
+            NSLog("[SettingsView] Auth completed - success: %d", success)
             DispatchQueue.main.async {
                 self.authenticatingService = nil
                 
@@ -1226,7 +1226,7 @@ public struct SettingsView: View {
         NSLog("[SettingsView] Starting Qwen authentication")
         
         serverManager.runAuthCommand(.qwenLogin(email: email)) { success, output in
-            NSLog("[SettingsView] Auth completed - success: %d, output: %@", success, output)
+            NSLog("[SettingsView] Auth completed - success: %d", success)
             DispatchQueue.main.async {
                 self.authenticatingService = nil
                 self.qwenEmail = ""
@@ -1249,7 +1249,7 @@ public struct SettingsView: View {
         NSLog("[SettingsView] Adding Z.AI API key")
         
         serverManager.saveZaiApiKey(apiKey) { success, output in
-            NSLog("[SettingsView] Z.AI key save completed - success: %d, output: %@", success, output)
+            NSLog("[SettingsView] Z.AI key save completed - success: %d", success)
             DispatchQueue.main.async {
                 self.authenticatingService = nil
                 self.zaiApiKey = ""
@@ -1273,7 +1273,7 @@ public struct SettingsView: View {
         NSLog("[SettingsView] Adding API key for custom provider %@", provider.id)
         
         serverManager.saveCustomProviderAPIKey(providerID: provider.id, apiKey: apiKey) { success, output in
-            NSLog("[SettingsView] Custom provider key save completed - success: %d, output: %@", success, output)
+            NSLog("[SettingsView] Custom provider key save completed - success: %d", success)
             DispatchQueue.main.async {
                 self.authenticatingCustomProviderID = nil
                 self.customProviderApiKey = ""

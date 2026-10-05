@@ -1,4 +1,4 @@
-.PHONY: build app install clean run help fetch-cliproxy changelog-commits sync-version version check-isolation
+.PHONY: build app install clean run help fetch-cliproxy fetch-dario changelog-commits sync-version version check-isolation test
 
 help: ## Show this help message
 	@echo "VibeProxyPlus - macOS Menu Bar App"
@@ -61,10 +61,10 @@ clean: ## Clean build artifacts
 	@rm -rf src/Sources/AppBridge/Resources/static
 	@echo "✅ Clean complete"
 
-test: ## Run a quick test build
-	@echo "🧪 Testing build..."
-	@cd src && swift build
-	@echo "✅ Test build successful"
+test: ## Run the Swift test suite
+	@echo "🧪 Running tests..."
+	@cd src && swift test
+	@echo "✅ Tests passed"
 
 info: ## Show project information
 	@echo "Project: VibeProxyPlus - macOS Menu Bar App"

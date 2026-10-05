@@ -54,7 +54,7 @@ public class ServerManager: ObservableObject {
     private var process: Process?
     private var activeAuthProcess: Process?
     @Published public private(set) var isRunning = false
-    private(set) var port = 8317
+    private(set) var port = 8318
     @Published private(set) var customProviders: [CustomProviderDefinition] = []
     @Published private(set) var customProviderCredentials: [String: [CustomProviderCredential]] = [:]
     @Published private(set) var configErrorMessage: String?
@@ -454,7 +454,6 @@ public class ServerManager: ObservableObject {
                 let data = handle.availableData
                 if let str = String(data: data, encoding: .utf8), !str.isEmpty {
                     capture.text += str
-                    NSLog("[Auth] Copilot output: %@", str)
                 }
             }
         }
@@ -496,7 +495,7 @@ public class ServerManager: ObservableObject {
                 if authProcess.isRunning {
                     if let data = "\(email)\n".data(using: .utf8) {
                         try? inputPipe.fileHandleForWriting.write(contentsOf: data)
-                        NSLog("[Auth] Sent Qwen email: %@", email)
+                        NSLog("[Auth] Submitted Qwen account email")
                     }
                 }
             }
@@ -518,7 +517,7 @@ public class ServerManager: ObservableObject {
         }
         
         do {
-            NSLog("[Auth] Starting process: %@ with args: %@", bundledPath, authProcess.arguments?.joined(separator: " ") ?? "none")
+            NSLog("[Auth] Starting authentication process")
             activeAuthProcess = authProcess
             try authProcess.run()
             addLog("✓ Authentication process started (PID: \(authProcess.processIdentifier)) - browser should open shortly")
@@ -574,7 +573,7 @@ public class ServerManager: ObservableObject {
                     if output.isEmpty { output = capture.text }
                     let error = String(data: errorData, encoding: .utf8) ?? ""
                     
-                    NSLog("[Auth] Process died quickly - output: %@", output.isEmpty ? "(empty)" : String(output.prefix(200)))
+                    NSLog("[Auth] Authentication process exited before completing")
                     
                     if output.contains("Opening browser") || output.contains("Attempting to open URL") {
                         // Browser opened but process finished (probably success)
@@ -1163,16 +1162,16 @@ public class ServerManager: ObservableObject {
     
     private func loadZaiAPIKeys() -> [String] {
         let loadResult = zaiAPIKeyStore.loadActiveAPIKeys()
-        for issue in loadResult.issues {
-            NSLog("[ServerManager] Ignoring Z.AI API key file at %@: %@", issue.filePath.path, issue.message)
+        for _ in loadResult.issues {
+            NSLog("[ServerManager] Ignoring invalid Z.AI API key file")
         }
         return loadResult.apiKeys
     }
     
     private func loadCustomProviderCredentialRecords() -> [CustomProviderCredentialRecord] {
         let loadResult = customProviderCredentialStore.loadAll()
-        for issue in loadResult.issues {
-            NSLog("[ServerManager] Ignoring custom provider credential file at %@: %@", issue.filePath.path, issue.message)
+        for _ in loadResult.issues {
+            NSLog("[ServerManager] Ignoring invalid custom provider credential file")
         }
         return loadResult.records
     }

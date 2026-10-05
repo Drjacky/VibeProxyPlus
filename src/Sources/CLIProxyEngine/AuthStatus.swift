@@ -136,7 +136,6 @@ class AuthManager: ObservableObject {
             NSLog("[AuthStatus] Scanning %d files in auth directory", files.count)
             
             for file in files where file.pathExtension == "json" {
-                NSLog("[AuthStatus] Checking file: %@", file.lastPathComponent)
                 guard let data = try? Data(contentsOf: file),
                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let type = json["type"] as? String,
@@ -144,7 +143,7 @@ class AuthManager: ObservableObject {
                     continue
                 }
                 
-                NSLog("[AuthStatus] Found type '%@' in %@", type, file.lastPathComponent)
+                NSLog("[AuthStatus] Found credential type '%@'", type)
                 
                 let email = json["email"] as? String
                 let login = json["login"] as? String
@@ -169,7 +168,7 @@ class AuthManager: ObservableObject {
                 )
                 
                 newAccounts[serviceType]?.append(account)
-                NSLog("[AuthStatus] Found %@ auth: %@", serviceType.displayName, account.displayName)
+                NSLog("[AuthStatus] Found %@ auth", serviceType.displayName)
             }
             
             // Update on main thread
@@ -196,7 +195,7 @@ class AuthManager: ObservableObject {
         do {
             let data = try Data(contentsOf: account.filePath)
             guard var json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                NSLog("[AuthStatus] Failed to parse auth file as JSON: %@", account.filePath.path)
+                NSLog("[AuthStatus] Failed to parse auth file as JSON")
                 return false
             }
             let currentlyDisabled = json["disabled"] as? Bool ?? false
@@ -210,7 +209,7 @@ class AuthManager: ObservableObject {
             json["disabled"] = !currentlyDisabled
             let updatedData = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
             try updatedData.write(to: account.filePath, options: .atomic)
-            NSLog("[AuthStatus] Toggled disabled=%d for: %@", !currentlyDisabled, account.filePath.path)
+            NSLog("[AuthStatus] Toggled account disabled=%d", !currentlyDisabled)
             checkAuthStatus()
             return true
         } catch {
@@ -236,7 +235,7 @@ class AuthManager: ObservableObject {
         do {
             let data = try Data(contentsOf: account.filePath)
             guard var json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                NSLog("[AuthStatus] Failed to parse auth file as JSON: %@", account.filePath.path)
+                NSLog("[AuthStatus] Failed to parse auth file as JSON")
                 return false
             }
             json["cloak_mode"] = mode
@@ -245,7 +244,7 @@ class AuthManager: ObservableObject {
             json["cloak_cache_user_id"] = cacheUserID ? "true" : "false"
             let updatedData = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
             try updatedData.write(to: account.filePath, options: .atomic)
-            NSLog("[AuthStatus] Applied cloak_mode=%@ to: %@", mode, account.filePath.path)
+            NSLog("[AuthStatus] Applied cloak_mode=%@", mode)
             return true
         } catch {
             NSLog("[AuthStatus] Failed to apply cloak settings: %@", error.localizedDescription)
@@ -257,7 +256,7 @@ class AuthManager: ObservableObject {
     func deleteAccount(_ account: AuthAccount) -> Bool {
         do {
             try FileManager.default.removeItem(at: account.filePath)
-            NSLog("[AuthStatus] Deleted auth file: %@", account.filePath.path)
+            NSLog("[AuthStatus] Deleted auth file")
             // Refresh status
             checkAuthStatus()
             return true

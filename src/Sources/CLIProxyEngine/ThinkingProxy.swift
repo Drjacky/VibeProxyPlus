@@ -268,7 +268,7 @@ public class ThinkingProxy {
         let method = parts[0]
         let path = parts[1]
         let httpVersion = parts[2]
-        NSLog("[ThinkingProxy] Incoming request: \(method) \(path)")
+        NSLog("[ThinkingProxy] Incoming \(method) request")
 
         // Collect headers while preserving original casing
         var headers: [(String, String)] = []
@@ -295,7 +295,7 @@ public class ThinkingProxy {
         if path.starts(with: "/auth/cli-login") || path.starts(with: "/api/auth/cli-login") {
             let loginPath = path.hasPrefix("/api/") ? String(path.dropFirst(4)) : path
             let redirectUrl = "https://ampcode.com" + loginPath
-            NSLog("[ThinkingProxy] Redirecting Amp CLI login to: \(redirectUrl)")
+            NSLog("[ThinkingProxy] Redirecting Amp CLI login")
             sendRedirect(to: connection, location: redirectUrl)
             return
         }
@@ -305,7 +305,7 @@ public class ThinkingProxy {
         if path.starts(with: "/provider/") {
             // Rewrite /provider/* to /api/provider/*
             rewrittenPath = "/api" + path
-            NSLog("[ThinkingProxy] Rewriting Amp provider path: \(path) -> \(rewrittenPath)")
+            NSLog("[ThinkingProxy] Rewriting Amp provider path")
         }
         
         // Check if this is an Amp management request (anything not targeting provider or /v1)
@@ -314,7 +314,7 @@ public class ThinkingProxy {
         let isCliProxyPath = rewrittenPath.starts(with: "/v1/") || rewrittenPath.starts(with: "/api/v1/")
         if !isProviderPath && !isCliProxyPath {
             let ampPath = rewrittenPath
-            NSLog("[ThinkingProxy] Amp management request detected, forwarding to ampcode.com: \(ampPath)")
+            NSLog("[ThinkingProxy] Forwarding Amp management request")
             forwardToAmp(method: method, path: ampPath, version: httpVersion, headers: headers, body: bodyString, originalConnection: connection)
             return
         }
@@ -871,10 +871,6 @@ public class ThinkingProxy {
             if let data = data, !data.isEmpty {
                 // Check if response is a 404
                 if let responseString = String(data: data, encoding: .utf8) {
-                    // Log first 200 chars to debug
-                    let preview = String(responseString.prefix(200))
-                    NSLog("[ThinkingProxy] Response preview for \(path): \(preview)")
-                    
                     // Check for 404 in status line OR in body
                     let is404 = responseString.contains("HTTP/1.1 404") || 
                                responseString.contains("HTTP/1.0 404") ||
@@ -883,7 +879,7 @@ public class ThinkingProxy {
                     if is404 {
                         // Check if path doesn't already start with /api/
                         if !path.starts(with: "/api/") && !path.starts(with: "/v1/") {
-                            NSLog("[ThinkingProxy] Got 404 for \(path), retrying with /api prefix")
+                            NSLog("[ThinkingProxy] Got 404, retrying with /api prefix")
                             targetConnection.cancel()
                             
                             // Retry with /api/ prefix
