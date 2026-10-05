@@ -4,6 +4,26 @@ All notable changes to **VibeProxyPlus** are documented in this file.
 
 ## [Unreleased]
 
+## [14.10.1] - 2026-10-05
+
+### Fixed
+
+- **Newer Claude models (e.g. Opus 5.5) work from Cline, Kilo Code and other OpenAI-compatible clients.** The CLIProxyAPIPlus engine reported Claude Code 2.1.258 for requests from clients that are not Claude Code, and Anthropic rejected models that need 2.1.280 or newer ("Claude Code 2.1.258 does not support this model"). The app now sets `claude-header-defaults` to Claude Code 2.1.280 and raises an older value in an existing `merged-config.yaml` on launch; a newer value you set yourself is kept. Updating the Claude Code CLI on the machine had no effect because requests never go through it.
+- **Qwen login shows a clear message.** The bundled CLIProxyAPIPlus has no Qwen login command, so Connect failed with a raw "flag provided but not defined" error. The app now checks which login commands the engine provides and explains when one is unavailable.
+- Orphaned engine cleanup no longer kills the app's own launch-time capability check.
+- The server log shows the backend port (8318) instead of the proxy port.
+
+### Security
+
+- **The proxy on port 8317 accepts connections from this Mac only by default.** It used to listen on all network interfaces. Turn on **Allow LAN connections** in Settings to use it from other devices on your network.
+- Logs no longer include credential file paths, account emails, request paths, login command arguments or login output.
+- The main app executable is signed with its entitlements, like the bundled engine binaries.
+- Signed release DMGs are notarized and stapled when Apple notarization credentials are configured.
+
+### Updated
+
+- **Dario 6.12.25** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v6.12.25). Tracks Claude Code 2.1.289 (current Sonnet 5 system prompt, SDK package version 0.128.0).
+
 ## [14.10.0] - 2026-10-03
 
 ### Added
