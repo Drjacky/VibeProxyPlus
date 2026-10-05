@@ -213,8 +213,15 @@ if [ -n "$CODESIGN_IDENTITY" ]; then
         echo -e "${GREEN}✅ Sparkle.framework signed${NC}"
     fi
     
-    # Sign the main executable with hardened runtime
-    codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/MacOS/AppBridge"
+    # Sign the main executable with hardened runtime and entitlements, matching the
+    # bundled engine binaries above so it carries a well-formed entitlements record.
+    if [ -f "$PROJECT_DIR/entitlements.plist" ]; then
+        codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp \
+            --entitlements "$PROJECT_DIR/entitlements.plist" \
+            "$APP_DIR/Contents/MacOS/AppBridge"
+    else
+        codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR/Contents/MacOS/AppBridge"
+    fi
     
     # Then sign the entire app bundle
     codesign --force --sign "$CODESIGN_IDENTITY" --options runtime --timestamp "$APP_DIR"

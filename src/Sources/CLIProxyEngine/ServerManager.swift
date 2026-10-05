@@ -109,6 +109,16 @@ public class ServerManager: ObservableObject {
     }
     public var onCloakSettingsChanged: (() -> Void)?
 
+    /// ThinkingProxy bind mode. Off (default): port 8317 accepts connections from this Mac
+    /// only. On: binds all interfaces so devices on the local network can use the proxy.
+    @Published public var proxyLANAccessEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(proxyLANAccessEnabled, forKey: "proxyLANAccessEnabled")
+            onProxyLANAccessChanged?()
+        }
+    }
+    public var onProxyLANAccessChanged: (() -> Void)?
+
     /// Helper class to capture output text across closures
     private class OutputCapture {
         var text = ""
@@ -171,6 +181,7 @@ public class ServerManager: ObservableObject {
         cloakStrictMode = UserDefaults.standard.bool(forKey: "cloakStrictMode")
         cloakSensitiveWords = UserDefaults.standard.string(forKey: "cloakSensitiveWords") ?? ""
         cloakCacheUserID = UserDefaults.standard.bool(forKey: "cloakCacheUserId")
+        proxyLANAccessEnabled = UserDefaults.standard.bool(forKey: "proxyLANAccessEnabled")
         reloadCustomProviders()
         markObservedConfigInputsCurrent()
     }

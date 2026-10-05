@@ -41,6 +41,11 @@ public final class CLIProxyEngineImpl: Engine {
         serverManager.onVercelConfigChanged = { [weak self] in
             self?.syncVercelConfig()
         }
+        syncProxyBindMode()
+        serverManager.onProxyLANAccessChanged = { [weak self] in
+            self?.syncProxyBindMode()
+            self?.thinkingProxy.restartListener()
+        }
         // Bridge the server status notification to the shell's status callback.
         NotificationCenter.default.addObserver(
             forName: .serverStatusChanged,
@@ -122,5 +127,10 @@ public final class CLIProxyEngineImpl: Engine {
             enabled: serverManager.vercelGatewayEnabled,
             apiKey: serverManager.vercelApiKey
         )
+    }
+
+    /// Applies the persisted LAN-access preference to the thinking proxy.
+    private func syncProxyBindMode() {
+        thinkingProxy.allowsLANConnections = serverManager.proxyLANAccessEnabled
     }
 }

@@ -37,6 +37,14 @@ public class ThinkingProxy {
 
     public var vercelConfig = VercelGatewayConfig(enabled: false, apiKey: "")
 
+    /// Bind mode. Off (default): the listener binds IPv4 loopback only, matching the
+    /// backend's 127.0.0.1 bind on 8318. On: binds all interfaces so other devices on the
+    /// local network can reach the proxy.
+    public var allowsLANConnections = false
+
+    /// Pending listener rebind scheduled by `restartListener()`; cancelled by `stop()`.
+    private var pendingRestart: DispatchWorkItem?
+
     public init() {}
     
     private enum Config {
@@ -48,6 +56,18 @@ public class ThinkingProxy {
     }
     
     /**
+     Builds listener parameters that bind IPv4 loopback only, so the proxy is not reachable
+     from the network. The backend on port 8318 binds 127.0.0.1 as well.
+     */
+    static func loopbackListenerParameters(port: UInt16) -> NWParameters? {
+        guard let port = NWEndpoint.Port(rawValue: port) else { return nil }
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
+        parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: port)
+        return parameters
+    }
+
+    /**
      Starts the thinking proxy server on port 8317
      */
     public func start() {
@@ -57,14 +77,22 @@ public class ThinkingProxy {
         }
         
         do {
-            let parameters = NWParameters.tcp
-            parameters.allowLocalEndpointReuse = true
-            
             guard let port = NWEndpoint.Port(rawValue: proxyPort) else {
                 NSLog("[ThinkingProxy] Invalid port: %d", proxyPort)
                 return
             }
-            listener = try NWListener(using: parameters, on: port)
+
+            if allowsLANConnections {
+                let parameters = NWParameters.tcp
+                parameters.allowLocalEndpointReuse = true
+                listener = try NWListener(using: parameters, on: port)
+            } else {
+                guard let parameters = ThinkingProxy.loopbackListenerParameters(port: proxyPort) else {
+                    NSLog("[ThinkingProxy] Invalid port: %d", proxyPort)
+                    return
+                }
+                listener = try NWListener(using: parameters)
+            }
             
             listener?.stateUpdateHandler = { [weak self] state in
                 switch state {
@@ -72,7 +100,10 @@ public class ThinkingProxy {
                     DispatchQueue.main.async {
                         self?.isRunning = true
                     }
-                    NSLog("[ThinkingProxy] Listening on port \(self?.proxyPort ?? 0)")
+                    let bindMode = self?.allowsLANConnections == true
+                        ? "all interfaces (LAN access enabled)"
+                        : "loopback only"
+                    NSLog("[ThinkingProxy] Listening on port \(self?.proxyPort ?? 0) - bind: \(bindMode)")
                 case .failed(let error):
                     NSLog("[ThinkingProxy] Failed: \(error)")
                     DispatchQueue.main.async {
@@ -104,6 +135,9 @@ public class ThinkingProxy {
      */
     public func stop() {
         stateQueue.sync {
+            pendingRestart?.cancel()
+            pendingRestart = nil
+
             guard isRunning else { return }
             
             listener?.cancel()
@@ -113,6 +147,25 @@ public class ThinkingProxy {
             }
             NSLog("[ThinkingProxy] Stopped")
         }
+    }
+
+    /**
+     Re-binds the listener so a change to `allowsLANConnections` takes effect immediately.
+     The short delay lets the cancelled listener tear down before the new bind; `stop()`
+     cancels the pending rebind if the proxy is shut down in the meantime.
+     */
+    public func restartListener() {
+        guard isRunning else { return }
+        stop()
+
+        let restart = DispatchWorkItem { [weak self] in
+            self?.start()
+        }
+        stateQueue.sync {
+            pendingRestart?.cancel()
+            pendingRestart = restart
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: restart)
     }
     
     /**
