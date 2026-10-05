@@ -960,9 +960,14 @@ public class ServerManager: ObservableObject {
             switch loadYAMLDictionary(atPath: mergedConfigPath.path) {
             case .success(let existingRuntimeRoot):
                 if !existingRuntimeRoot.isEmpty {
+                    let composedRoot = mergedRoot
                     mergedRoot = ConfigComposer.overlayManagedKeys(
                         onto: existingRuntimeRoot,
-                        from: mergedRoot
+                        from: composedRoot
+                    )
+                    mergedRoot = ConfigComposer.raiseClaudeHeaderBaseline(
+                        onto: mergedRoot,
+                        from: composedRoot
                     )
                 }
             case .failure:

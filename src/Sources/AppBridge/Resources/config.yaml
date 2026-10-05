@@ -34,6 +34,16 @@ request-retry: 3
 # Important for Extended Thinking requests which may take 5-10+ minutes.
 request-timeout: "10m"
 
+# Claude Code baseline the backend reports for Claude OAuth requests from clients that are
+# not Claude Code (Cline, Kilo Code, OpenAI-compatible tools). Anthropic gates newer models
+# on this version, so it must be at least the minimum Claude Code version those models need.
+# The app raises an older user-agent in merged-config.yaml to this value on launch and never
+# lowers a newer one. Raise or remove it once the bundled CLIProxyAPIPlus default overtakes it.
+claude-header-defaults:
+  user-agent: "claude-cli/2.1.280 (external, cli)"
+  package-version: "0.112.1"
+  runtime-version: "v26.3.0"
+
 # Quota management
 quota-exceeded:
   switch-project: true

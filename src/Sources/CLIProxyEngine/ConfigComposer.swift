@@ -45,6 +45,54 @@ enum ConfigComposer {
         return result
     }
     
+    static let claudeHeaderDefaultsKey = "claude-header-defaults"
+
+    /// Ensures the runtime config reports a Claude Code version at least as new as the bundled
+    /// baseline in `composedRoot["claude-header-defaults"]`.
+    ///
+    /// - If the runtime config has no `claude-header-defaults`, the bundled block is copied in.
+    /// - If its `user-agent` is missing, unparseable, or an older `claude-cli/X.Y.Z` than the
+    ///   bundled one, the bundled `user-agent` replaces it and any missing sibling keys
+    ///   (`package-version`, `runtime-version`, ...) are filled from the bundled block.
+    /// - A runtime `user-agent` that is equal or newer is left untouched, as are all other keys.
+    static func raiseClaudeHeaderBaseline(
+        onto runtimeRoot: [String: Any],
+        from composedRoot: [String: Any]
+    ) -> [String: Any] {
+        guard let bundled = composedRoot[claudeHeaderDefaultsKey] as? [String: Any],
+              let bundledUA = bundled["user-agent"] as? String,
+              let bundledVersion = claudeCLIVersion(from: bundledUA) else {
+            return runtimeRoot
+        }
+        var result = runtimeRoot
+        guard var runtime = runtimeRoot[claudeHeaderDefaultsKey] as? [String: Any] else {
+            result[claudeHeaderDefaultsKey] = bundled
+            return result
+        }
+        if let runtimeUA = runtime["user-agent"] as? String,
+           let runtimeVersion = claudeCLIVersion(from: runtimeUA),
+           !runtimeVersion.lexicographicallyPrecedes(bundledVersion) {
+            return runtimeRoot
+        }
+        runtime["user-agent"] = bundledUA
+        for (key, value) in bundled where runtime[key] == nil {
+            runtime[key] = value
+        }
+        result[claudeHeaderDefaultsKey] = runtime
+        return result
+    }
+
+    /// Parses `claude-cli/MAJOR.MINOR.PATCH...` into `[MAJOR, MINOR, PATCH]`.
+    static func claudeCLIVersion(from userAgent: String) -> [Int]? {
+        let prefix = "claude-cli/"
+        let trimmed = userAgent.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix(prefix) else { return nil }
+        let versionPart = trimmed.dropFirst(prefix.count).prefix { $0.isNumber || $0 == "." }
+        let components = versionPart.split(separator: ".").compactMap { Int($0) }
+        guard components.count == 3 else { return nil }
+        return components
+    }
+
     static func parseCustomProviders(
         from root: [String: Any],
         reservedProviderIDs: Set<String>
