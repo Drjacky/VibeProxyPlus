@@ -6,6 +6,37 @@
     <description>Sparkle feed for VibeProxyPlus arm64 builds. Items are added when you publish a GitHub Release.</description>
     <language>en</language>
     <item>
+      <title>Version 14.10.1</title>
+      <sparkle:version>852</sparkle:version>
+      <sparkle:shortVersionString>14.10.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <pubDate>Mon, 05 Oct 2026 16:31:59 GMT</pubDate>
+      <description sparkle:format="markdown"><![CDATA[
+
+### Fixed
+
+- **Newer Claude models (e.g. Opus 5.5) work from Cline, Kilo Code and other OpenAI-compatible clients.** The CLIProxyAPIPlus engine reported Claude Code 2.1.258 for requests from clients that are not Claude Code, and Anthropic rejected models that need 2.1.280 or newer ("Claude Code 2.1.258 does not support this model"). The app now sets `claude-header-defaults` to Claude Code 2.1.280 and raises an older value in an existing `merged-config.yaml` on launch; a newer value you set yourself is kept. Updating the Claude Code CLI on the machine had no effect because requests never go through it.
+- **Qwen login shows a clear message.** The bundled CLIProxyAPIPlus has no Qwen login command, so Connect failed with a raw "flag provided but not defined" error. The app now checks which login commands the engine provides and explains when one is unavailable.
+- Orphaned engine cleanup no longer kills the app's own launch-time capability check.
+- The server log shows the backend port (8318) instead of the proxy port.
+
+### Security
+
+- **The proxy on port 8317 accepts connections from this Mac only by default.** It used to listen on all network interfaces. Turn on **Allow LAN connections** in Settings to use it from other devices on your network.
+- Logs no longer include credential file paths, account emails, request paths, login command arguments or login output.
+- The main app executable is signed with its entitlements, like the bundled engine binaries.
+- Signed release DMGs are notarized and stapled when Apple notarization credentials are configured.
+
+### Updated
+
+- **Dario 6.12.25** - [askalf/dario](https://github.com/askalf/dario/releases/tag/v6.12.25). Tracks Claude Code 2.1.289 (current Sonnet 5 system prompt, SDK package version 0.128.0).
+]]></description>
+      <enclosure url="https://github.com/Drjacky/VibeProxyPlus/releases/download/v14.10.1/VibeProxyPlus-arm64-unsigned.zip"
+                 type="application/octet-stream"
+                 sparkle:edSignature="QMy7LOT3ONij2BFPU19mKoFa1UaKl6vTwEqmtoaziPDRooTfSQbj2CP9pa9dy5+M7mK/ZvH2LgP15oKD5F8mCA=="
+                 length="50758878"/>
+    </item>
+    <item>
       <title>Version 14.10.0</title>
       <sparkle:version>843</sparkle:version>
       <sparkle:shortVersionString>14.10.0</sparkle:shortVersionString>
