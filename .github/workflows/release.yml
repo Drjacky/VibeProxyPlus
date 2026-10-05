@@ -224,6 +224,10 @@ jobs:
       - name: Detect signature and name artifacts
         id: package
         if: steps.cliproxy.outputs.skip != 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: |
           set -e
           codesign --verify --deep --strict VibeProxyPlus.app
@@ -261,6 +265,28 @@ jobs:
           fi
           create-dmg "${DMG_ARGS[@]}" "$DMG" "VibeProxyPlus.app" || true
           if [ -f "$DMG" ]; then
+            # Notarize and staple signed DMGs so Gatekeeper accepts them offline. Requires the
+            # APPLE_ID, APPLE_TEAM_ID and APPLE_APP_SPECIFIC_PASSWORD secrets; skipped otherwise.
+            if [ "$SIGN_LABEL" = "signed" ] && [ -n "${APPLE_ID}" ] && [ -n "${APPLE_TEAM_ID}" ] && [ -n "${APPLE_APP_SPECIFIC_PASSWORD}" ]; then
+              SUBMIT_OUTPUT=$(xcrun notarytool submit "$DMG" \
+                --apple-id "${APPLE_ID}" \
+                --team-id "${APPLE_TEAM_ID}" \
+                --password "${APPLE_APP_SPECIFIC_PASSWORD}" \
+                --wait --output-format json)
+              echo "$SUBMIT_OUTPUT"
+              SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | jq -r '.id')
+              STATUS=$(echo "$SUBMIT_OUTPUT" | jq -r '.status')
+              if [ "$STATUS" != "Accepted" ]; then
+                xcrun notarytool log "$SUBMISSION_ID" \
+                  --apple-id "${APPLE_ID}" \
+                  --team-id "${APPLE_TEAM_ID}" \
+                  --password "${APPLE_APP_SPECIFIC_PASSWORD}"
+                exit 1
+              fi
+              xcrun stapler staple "$DMG"
+              xcrun stapler validate "$DMG"
+              spctl --assess --type open --context context:primary-signature -v "$DMG"
+            fi
             shasum -a 256 "$DMG" > "${DMG}.sha256"
             echo "dmg_name=${DMG}" >> $GITHUB_OUTPUT
           fi
